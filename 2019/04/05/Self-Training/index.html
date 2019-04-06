@@ -15,7 +15,7 @@
 <meta property="og:description" content="Abstract这篇文章旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从GTA V中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2019/04/05/Self-Training/teaser.png">
-<meta property="og:updated_time" content="2019-04-06T18:45:07.601Z">
+<meta property="og:updated_time" content="2019-04-06T19:02:09.515Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="论文笔记-Unsupervised Domain Adaptation for Semantic Segmentation via Class-Balanced Self-Training">
 <meta name="twitter:description" content="Abstract这篇文章旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从GTA V中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输">
@@ -51,7 +51,8 @@
     
 </head>
 
-<body class="max-width mx-auto px3 ltr">    
+<body class="max-width mx-auto px3 ltr">
+    
       <div id="header-post">
   <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
   <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
@@ -175,7 +176,7 @@
 0 & \text{otherwise}
 \end{cases}​</script><p>通过normalization后，low score但是confidence很高的class得以被选出。因此\(k_c\)的选择也需要体现出这一点。</p>
 <h3 id="Self-paced-learning-policy-design"><a href="#Self-paced-learning-policy-design" class="headerlink" title="Self-paced learning policy design"></a>Self-paced learning policy design</h3><p>由上面的内容可知，k值的选择在self learning的过程中至关重要。</p>
-<p>然而<br><blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque hendrerit lacus ut purus iaculis feugiat. Sed nec tempor elit, quis aliquam neque. Curabitur sed diam eget dolor fermentum semper at eu lorem.</p>
+<p>选定k的流程为<br><blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque hendrerit lacus ut purus iaculis feugiat. Sed nec tempor elit, quis aliquam neque. Curabitur sed diam eget dolor fermentum semper at eu lorem.</p>
 </blockquote></p>
 
   </div>
@@ -279,20 +280,5 @@
 <!-- Disqus Comments -->
 
 
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {
-            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-            processEscapes: true
-        }
-    });
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax();
-        for (var i = 0; i < all.length; ++i)
-            all[i].SourceElement().parentNode.className += ' has-jax';
-    });
-</script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
 </body>
 </html>
