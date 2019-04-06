@@ -15,7 +15,7 @@
 <meta property="og:description" content="Abstract这篇文章旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从GTA V中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输">
 <meta property="og:locale" content="default">
 <meta property="og:image" content="http://yoursite.com/2019/04/05/Self-Training/teaser.png">
-<meta property="og:updated_time" content="2019-04-06T19:02:09.515Z">
+<meta property="og:updated_time" content="2019-04-06T19:46:01.515Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="论文笔记-Unsupervised Domain Adaptation for Semantic Segmentation via Class-Balanced Self-Training">
 <meta name="twitter:description" content="Abstract这篇文章旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从GTA V中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输">
@@ -51,8 +51,7 @@
     
 </head>
 
-<body class="max-width mx-auto px3 ltr">
-    
+<body class="max-width mx-auto px3 ltr">    
       <div id="header-post">
   <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
   <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
@@ -147,16 +146,16 @@
 <img src="/2019/04/05/Self-Training/teaser.png" title="teaser">
 </center>
 
-<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>这篇文章旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从<a href="https://arxiv.org/pdf/1608.02192.pdf" target="_blank" rel="noopener">GTA V</a>中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输入上去。因此本文提出了一种unsupervised方法，先用 GTA V 数据预训练网络，再用没有label的真实数据来finetune网络来让网络可以应对真实情况。这就是domain adaptation的工作目标。</p>
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>这篇<a href="http://openaccess.thecvf.com/content_ECCV_2018/papers/Yang_Zou_Unsupervised_Domain_Adaptation_ECCV_2018_paper.pdf" target="_blank" rel="noopener">文章</a>旨在使用unsupervised的方法解决真实数据缺少label的问题。对于街景图片的语义分割问题，往往缺少大量的labelled 的数据作为training data. 现有的一些方法可以从<a href="https://arxiv.org/pdf/1608.02192.pdf" target="_blank" rel="noopener">GTA V</a>中提取大量automatically labelled的街景图片。然而这样的数据由于和现实图片有较大的差异，作为training data训练出的网络很难泛化到真实输入上去。因此本文提出了一种unsupervised方法，先用 GTA V 数据预训练网络，再用没有label的真实数据来finetune网络来让网络可以应对真实情况。这就是domain adaptation的工作目标。</p>
 <h2 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h2><p>核心是一个交叉优化问题。</p>
 <h3 id="Supervised-Domain-Adaptation"><a href="#Supervised-Domain-Adaptation" class="headerlink" title="Supervised Domain Adaptation"></a>Supervised Domain Adaptation</h3><p>在生成数据(source)和真实数据(target)都有Label的情况下，一般是用少量的target data来fineture用source data训练出来的网络，adaptation问题的loss一般是如下形式：</p>
 <script type="math/tex; mode=display">\min_{w}\mathcal{L}_{S} (w)=-\sum^{S} _{s=1} \sum^{N} _{n=1} y^\intercal _{s,n} \log (p_n(w, I_s)) - \sum^{T} _{t=1} \sum^{N} _{n=1} y^\intercal _{t,n} \log (p_n(w, I_t))</script><p>其中\(I<em>s\)代表source input。\(y</em>{s,n}\)代表\(I_s\)第n个pixel的ground truth label. \(w\)代表网络权重，\(p_n(w, I_s)\)代表\(I_s\)的第n个像素通过网络的softmax输出结果。符号定义对于target是相似的。<br><strong>这个公式的核心就是降低预测结果和ground truth的交叉熵，是基本的语义分割的loss。</strong></p>
 <h3 id="Unsupervised-Domain-Adaptation"><a href="#Unsupervised-Domain-Adaptation" class="headerlink" title="Unsupervised Domain Adaptation"></a>Unsupervised Domain Adaptation</h3><p>不同于supervised domain adaptation, target label是缺失的，因此可以考虑target label是一个隐变量，和网络权重一样是可以学习到的。这样思考的话上面的公式就变成了</p>
-<script type="math/tex; mode=display">\min_{w, \hat{y}}\mathcal{L}_{U} (w, \hat{y})=-\sum^{S}_{s=1} \sum^{N} _{n=1} y^\intercal _{s,n} \log (p_n(w, I_s)) - \sum^{T} _{t=1} \sum^{N} _{n=1} \hat{y}^\intercal _{t,n} \log (p_n(w, I_t)) \\ \mathrm{ s.t. }\space\hat{y}_{t,n}\in{\{ e^i|e^i\in \mathcal{R}^C\}}​</script><p>其中\(\hat{y}\)称作psuedo-label, \(C\)是class的数量,\(e^i\)是one-hot向量。这样将target label也作为优化的对象，对此使用self-training的优化策略。</p>
+<script type="math/tex; mode=display">\min_{w, \hat{y}}\mathcal{L}_{U} (w, \hat{y})=-\sum^{S}_{s=1} \sum^{N} _{n=1} y^\intercal _{s,n} \log (p_n(w, I_s)) - \sum^{T} _{t=1} \sum^{N} _{n=1} \hat{y}^\intercal _{t,n} \log (p_n(w, I_t)) \\ \mathrm{ s.t. }\space\hat{y}_{t,n}\in{\{ e^i|e^i\in \mathcal{R}^C\}}​</script><p>其中\(\hat{y}\)称作pseudo-label, \(C\)是class的数量,\(e^i\)是one-hot向量。这样将target label也作为优化的对象，对此使用self-training的优化策略。</p>
 <h3 id="Self-Training"><a href="#Self-Training" class="headerlink" title="Self Training"></a>Self Training</h3><p>按照前文所说，self-training实际上就是解上一个公式的优化问题，然而解出来的\(\hat{y}\)很难保证是正确的，所以self-trainging的过程采用了easy-to-hard模式，先找到confidence更高的target label用于更新网络，再逐渐采用confidence稍低的target label来逐步finetune，实际上是一个交叉优化问题。公式为</p>
 <script type="math/tex; mode=display">\min_{w, \hat{y}}\mathcal{L}_{ST} (w, \hat{y})=-\sum^{S} _{s=1} \sum^{N} _{n=1} y^\intercal _{s,n} \log (p_n(w, I_s)) - \sum^{T} _{t=1} \sum^{N} _{n=1} [ \hat{y}^\intercal _{t,n} \log (p_n(w, I_t)) + k\lvert \hat{y}_{t,n} \rvert_1 ] \\
 
-\mathrm{ s.t. }\space\hat{y}_{t,n}\in{\{ e^i|e^i\in \mathcal{R}^C\}}, k>0</script><p><strong>这个公式里比较核心的一点是引入了L1 norm。因为求交叉熵的关系，如果直接将psuedo label设为0就可以直接求得最小值0。引入L1 norm相当于为优化目标提供了负值走向，从而避免将psuedo label全设为0的结果。</strong></p>
+\mathrm{ s.t. }\space\hat{y}_{t,n}\in{\{ e^i|e^i\in \mathcal{R}^C\}}, k>0</script><p><strong>这个公式里比较核心的一点是引入了L1 norm。因为求交叉熵的关系，如果直接将pseudo label设为0就可以直接求得最小值0。引入L1 norm相当于为优化目标提供了负值走向，从而避免将pseudo label全设为0的结果。</strong></p>
 <p>优化分为两个步骤</p>
 <ol>
 <li>固定\(w\)，优化\(\hat{y}_{t,n}\)</li>
@@ -167,17 +166,21 @@
 <script type="math/tex; mode=display">\hat{y}^{(c)*} _{t,n}=\begin{cases}
 1 & \text{if } \underset{c}{\text{argmax }}c=p_n(c|w, I_t),p_n(c|w, I_t) > exp(-k)  \\
 0 & \text{otherwise}
-\end{cases}</script><p>\(p_n(c|w, I_t) &gt; exp(-k)\)的限制条件可以保证得到负值输出，优于将psuedo label完全设为0的结果。</p>
+\end{cases}</script><p>\(p_n(c|w, I_t) &gt; exp(-k)\)的限制条件可以保证得到负值输出，优于将pseudo label完全设为0的结果。</p>
 <h3 id="Class-balanced-Self-Training"><a href="#Class-balanced-Self-Training" class="headerlink" title="Class-balanced Self Training"></a>Class-balanced Self Training</h3><p>对于多class分割，以上方法由于采用了easy-to-hard模式，会让网络更倾向于在易于分辨的class处表现良好而在不易分辨的class处效果很差（或者是某个在图片中占比很低的class）。因此需要做class-balance来保证每个class都能被很好分割。</p>
 <script type="math/tex; mode=display">\min_{w, \hat{y}}\mathcal{L}_{ST} (w, \hat{y})=-\sum^{S} _{s=1} \sum^{N} _{n=1} y^\intercal _{s,n} \log (p_n(w, I_s)) - \sum^{T} _{t=1} \sum^{N} _{n=1} \sum^{C} _{c=1} [ \hat{y}^{(c)} _{t,n} \log (p_n(c|w, I_t)) + k_c\lvert \hat{y}^{(c)} _{t,n} \rvert_1 ] \\ \mathrm{ s.t. }\space\hat{y}_{t,n} = [ \hat{y}^{(1)} _{t,n}, \cdots , \hat{y}^{(C)} _{t,n} ]\in{ \{ \{ e^i|e^i\in \mathcal{R}^C\}} \cup 0 \}, k_c>0</script><p>其实改进很简单，不同的class设置不同的k值。k值越大，class所占权重也越大。</p>
 <p>优化算子则变成了</p>
 <script type="math/tex; mode=display">\hat{y}^{(c)*} _{t,n}=\begin{cases}
 1 & \text{if } \underset{c}{\text{argmax }}c=\frac{p_n(c|w, I_t)}{exp(-k_c)},\frac{p_n(c|w, I_t)}{exp(-k_c)} > 1  \\
 0 & \text{otherwise}
-\end{cases}​</script><p>通过normalization后，low score但是confidence很高的class得以被选出。因此\(k_c\)的选择也需要体现出这一点。</p>
+\end{cases}</script><p>通过normalization后，low score但是confidence很高的class得以被选出。因此\(k_c\)的选择也需要体现出这一点。</p>
 <h3 id="Self-paced-learning-policy-design"><a href="#Self-paced-learning-policy-design" class="headerlink" title="Self-paced learning policy design"></a>Self-paced learning policy design</h3><p>由上面的内容可知，k值的选择在self learning的过程中至关重要。</p>
 <p>选定k的流程为<br><blockquote><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque hendrerit lacus ut purus iaculis feugiat. Sed nec tempor elit, quis aliquam neque. Curabitur sed diam eget dolor fermentum semper at eu lorem.</p>
 </blockquote></p>
+<div style="text-align:center">
+  <div class="github-card" data-user="yzou2" data-repo="cbst" data-width="400" data-theme="default" data-target data-client-id data-client-secret></div>
+</div>
+<script src="/github-card-lib/githubcard.js"></script>
 
   </div>
 </article>
@@ -280,5 +283,20 @@
 <!-- Disqus Comments -->
 
 
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
 </body>
 </html>
