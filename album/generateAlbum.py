@@ -13,6 +13,8 @@ head = """
 title: album
 date: 2019-05-26 15:39:42
 ---
+>用无限适用于未来的方法 置换体内的星辰河流
+
 """
 doc, tag, text = Doc().tagtext()
 
