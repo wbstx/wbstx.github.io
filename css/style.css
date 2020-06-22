@@ -467,6 +467,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
 }
+.center{
+  margin:auto;
+}
+.papertitle{
+  font-size: 20px;
+  text-align: center;
+}
+
 .content {
   position: relative;
   display: flex;
