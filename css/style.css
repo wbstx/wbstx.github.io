@@ -449,14 +449,13 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
-  border-top: 2px solid #22272a;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
 }
 body {
   margin: 0;
   height: 100%;
-  background-color: #fafafa;
+  background-color: #ffffff;
   color: #22272a;
   font-display: swap;
   font-weight: 400;
