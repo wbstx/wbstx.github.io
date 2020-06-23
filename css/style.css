@@ -319,7 +319,7 @@
 body h1,
 body .h1 {
   display: block;
-  margin-top: 3rem;
+  /* margin-top: 3rem; */
   margin-bottom: 1rem;
   color: #cc2a41;
   letter-spacing: 0.01em;
@@ -417,7 +417,7 @@ body table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 12px;
+  font-size: 14px;
   overflow: auto;
   display: block;
 }
@@ -425,7 +425,7 @@ body th {
   padding: 8px;
   color: rgba(86,124,119,0.8);
   font-weight: bold;
-  font-size: 13px;
+  font-size: 15px;
 }
 body td {
   padding: 9px 8px 0;
@@ -459,9 +459,9 @@ body {
   color: #22272a;
   font-display: swap;
   font-weight: 400;
-  font-size: 14px;
+  font-size: 15px;
   font-family: "Menlo", "Meslo LG", monospace;
-  line-height: 1.725;
+  line-height: 1.5;
   text-rendering: geometricPrecision;
   flex: 1;
   -moz-osx-font-smoothing: grayscale;
@@ -480,6 +480,82 @@ body {
 
 .school-logo{
   margin-top: 2em;
+}
+
+.teaser{
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  max-width: 100%;
+  height: auto;
+  width: 25%;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.letter {
+  display: inline-block;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 550px;
+  min-height: 200px;
+  padding: 0px;
+  margin-right: 1em;
+  position: relative;
+  width: 70%;
+}
+.letter:before, .letter:after {
+  content: "";
+  height: 98%;
+  position: absolute;
+  width: 100%;
+  z-index: -1;
+}
+.letter:before {
+  background: #fafafa;
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+  left: -5px;
+  top: 4px;
+  transform: rotate(-2.5deg);
+}
+.letter:after {
+  background: #f6f6f6;
+  box-shadow: 0 0 3px rgba(0,0,0,0.2);
+  right: -3px;
+  top: 1px;
+  transform: rotate(1.4deg);
+}
+
+.hvr-icon-fade-red {
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-transform: perspective(1px) translateZ(0);
+  transform: perspective(1px) translateZ(0);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+  cursor: default;
+}
+.hvr-icon-fade-red .hvr-icon {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-transition-duration: 0.5s;
+  transition-duration: 0.5s;
+  -webkit-transition-property: color;
+  transition-property: color;
+  cursor: default;
+}
+.hvr-icon-fade-red:hover .hvr-icon, .hvr-icon-fade-red:focus .hvr-icon, .hvr-icon-fade-red:active .hvr-icon {
+  color: #b32613;
+  cursor: default;
+}
+
+hr.style-two {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
 }
 
 .content {
@@ -1102,13 +1178,15 @@ article .content h2:before {
   font-weight: bold;
   font-size: 1.2rem;
 }
-article .content img,
+
+article .content .paperimage,
 article .content video {
   display: block;
   margin: auto;
   max-width: 100%;
   height: auto;
 }
+
 article .content .video-container {
   position: relative;
   overflow: hidden;
