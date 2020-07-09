@@ -20,7 +20,7 @@
 <body class="max-width mx-auto px3 ltr">
   <article>
     <div class="content index py3">
-      <div class="center">
+      <div class="center" data-aos="fade-up">
 
         <p class="papertitle">
           GrabAR: Occlusion-aware Grabbing Virtual Objects in AR
@@ -44,51 +44,55 @@
         <img class="teaser hvr-bob" src="./images/radio.gif">
         <img class="teaser hvr-bob" src="./images/phone.gif">
       </div>
-      <blockquote>
+      <blockquote data-aos="fade-up">
         <p>Enabling users to grab, move and manipulate virtual objects in AR with a RGB camera and a marker</p>
       </blockquote>
       <hr class="style-two">
-      <h1>Abstrast</h1>
-      <p>
-        Existing augmented reality (AR) applications often ignore the occlusion between real hands and virtual objects
-        when incorporating virtual objects in user's views.
-        The challenges come from the lack of accurate depth and mismatch between real and virtual depth.
-        This paper presents GrabAR, a new approach that <em>directly predicts the real-and-virtual occlusion</em> and
-        bypasses the depth acquisition and inference.
-        Our goal is to enhance AR applications with interactions between hand (real) and grabbable objects (virtual).
-        With paired images of hand and object as inputs, we formulate a compact deep neural network that learns to
-        generate the occlusion mask.
-        To train the network, we compile a large dataset, including synthetic data and real data.
-        We then embed the trained network in a prototyping AR system to support real-time grabbing of virtual objects.
-        Further, we demonstrate the performance of our method on various virtual objects, compare our method with others
-        through two user studies, and showcase a rich variety of interaction scenarios, in which we can use bare hand to
-        grab virtual objects and directly manipulate them.
-      </p>
+      <div data-aos="fade-up">
+        <h1>Abstrast</h1>
+        <p>
+          Existing augmented reality (AR) applications often ignore the occlusion between real hands and virtual objects
+          when incorporating virtual objects in user's views.
+          The challenges come from the lack of accurate depth and mismatch between real and virtual depth.
+          This paper presents GrabAR, a new approach that <em>directly predicts the real-and-virtual occlusion</em> and
+          bypasses the depth acquisition and inference.
+          Our goal is to enhance AR applications with interactions between hand (real) and grabbable objects (virtual).
+          With paired images of hand and object as inputs, we formulate a compact deep neural network that learns to
+          generate the occlusion mask.
+          To train the network, we compile a large dataset, including synthetic data and real data.
+          We then embed the trained network in a prototyping AR system to support real-time grabbing of virtual objects.
+          Further, we demonstrate the performance of our method on various virtual objects, compare our method with
+          others
+          through two user studies, and showcase a rich variety of interaction scenarios, in which we can use bare hand
+          to
+          grab virtual objects and directly manipulate them.
+        </p>
+        <hr class="style-two">
+      </div>
+      <h1 data-aos="fade-up">Video</h1>
+      <iframe data-aos="fade-up" class="center" width="600" height="400" src="https://www.youtube.com/embed/zixCh8GzTzE"
+        frameborder="0" allow="accelerometer; picture-in-picture"></iframe>
       <hr class="style-two">
-      <h1>Video</h1>
-      <iframe class="center" width="600" height="400" src="https://www.youtube.com/embed/zixCh8GzTzE" frameborder="0"
-        allow="accelerometer; picture-in-picture"></iframe>
-      <hr class="style-two">
-      <h1>Link</h1>
-      <p>
-        Paper: <a class="icon hvr-icon-bounce" target="_blank" href="https://arxiv.org/abs/1912.10637"><i
-            class="fa fa-file-pdf hvr-icon"></i></a>
-        </br>
-        Code: <a class="icon hvr-icon-fade-red"" target=" _blank" href="#"><i
-            class="fas fa-code-branch hvr-icon"></i></a> (coming soon)
-        </br>
-        Dataset: <a class="icon hvr-icon-fade-red"" target=" _blank" href="#"><i
-            class="fas fa-database hvr-icon"></i></a> (coming soon)
-      </p>
-
+      <div data-aos="fade-up">
+        <h1>Link</h1>
+        <p>
+          Paper: <a class="icon hvr-icon-bounce" target="_blank" href="https://arxiv.org/abs/1912.10637"><i
+              class="fa fa-file-pdf hvr-icon"></i></a>
+          </br>
+          Code: <a class="icon hvr-icon-fade-red"" target=" _blank" href="#"><i
+              class="fas fa-code-branch hvr-icon"></i></a> (coming soon)
+          </br>
+          Dataset: <a class="icon hvr-icon-fade-red"" target=" _blank" href="#"><i
+              class="fas fa-database hvr-icon"></i></a> (coming soon)
+        </p>
+      </div>
       <footer id="footer">
         <div class="footer-left">
           Copyright &copy; 2019 TANG
         </div>
         <div class="footer-right">
           Find me on
-          <a class="icon inactiveLink" target="_blank" href="http://github.com/wbstx"><i
-              class="fab fa-github"></i></a>.
+          <a class="icon inactiveLink" target="_blank" href="http://github.com/wbstx"><i class="fab fa-github"></i></a>.
         </div>
       </footer>
     </div>
@@ -97,10 +101,12 @@
   <link rel="stylesheet" href="/lib/font-awesome/css/all.css">
   <link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
   <link rel="stylesheet" href="/lib/hover/hover.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <!-- jquery -->
   <script src="/lib/jquery/jquery.min.js"></script>
   <script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
   <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <!-- search -->
 
   <!-- Google Analytics -->
