@@ -1186,6 +1186,7 @@ article .content h2:before {
 
 article .content .paperimage,
 article .content video {
+  border-radius:12px;
   display: block;
   margin: auto;
   max-width: 100%;
@@ -1601,7 +1602,7 @@ code {
   color: #919191;
 }
 .highlight figcaption:before,
-.highlight figcaption content: "" {
+.highlight figcaption content {
   display: table;
 }
 .highlight figcaption:after {
