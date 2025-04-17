@@ -1635,3 +1635,23 @@ code {
 .highlight .line {
   height: 22px;
 }
+
+.superhighlight {
+  display: inline-block;
+  font-weight: 600;
+  background: radial-gradient(circle,rgba(212, 53, 63, 1) 0%, rgba(193, 104, 82, 1) 30%, rgba(199, 115, 87, 1) 36%, rgba(224, 217, 110, 1) 100%);
+  background-size: 400% 400%;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: ran 20s linear infinite;
+}
+
+@keyframes ran {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
