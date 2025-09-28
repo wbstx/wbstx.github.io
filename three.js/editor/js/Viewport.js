@@ -348,8 +348,6 @@ function Viewport( editor ) {
 
 		controls.connect( newRenderer.domElement );
 		transformControls.connect( newRenderer.domElement );
-		transformControls.enabled = false;
-		transformControls.visible = false;
 
 		controls.visible = false;
 		

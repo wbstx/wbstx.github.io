@@ -50,6 +50,12 @@ class UIElement {
 
 	}
 
+	removeLastChild() {
+		if ( this.dom.lastChild ) {
+			this.dom.removeChild( this.dom.lastChild );
+		}
+	}
+
 	clear() {
 
 		while ( this.dom.children.length ) {
