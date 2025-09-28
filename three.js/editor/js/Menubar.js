@@ -45,7 +45,8 @@ function Menubar( editor ) {
 			} );
 			cameraContainer.add( option );
 		}
-		container.removeLastChild();
+		if (container.dom.children.length > 4)
+			container.removeLastChild();
 		container.add( cameraContainer );
 	}
 

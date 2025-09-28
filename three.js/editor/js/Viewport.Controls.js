@@ -20,7 +20,7 @@ function ViewportControls( editor ) {
 		editor.setViewportCamera( this.getValue() );
 
 	} );
-	container.add( cameraSelect );
+	// container.add( cameraSelect );
 
 	signals.cameraAdded.add( update );
 	signals.cameraRemoved.add( update );
