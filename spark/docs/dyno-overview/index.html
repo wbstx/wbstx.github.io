@@ -1,0 +1,1266 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://sparkjs.dev/docs/dyno-overview/">
+      
+      
+        <link rel="prev" href="../splat-editing/">
+      
+      
+        <link rel="next" href="../dyno-stdlib/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../static/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Dyno overview - Spark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../static/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/spark.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <meta name="description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <!-- Facebook Meta Tags -->
+  <meta property="og:url" content="https://sparkjs.dev">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Spark">
+  <meta property="og:description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <meta property="og:image" content="https://opengraph.b-cdn.net/production/images/763a8fd8-7dad-4f91-ab27-e36a889c2d54.png?token=3c6AgBfDRclxcs5EBSW5KdHsgL0c5WObagFZHS6Xh9w&height=630&width=1200&expires=33285588022">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="twitter:domain" content="sparkjs.dev">
+  <meta property="twitter:url" content="https://sparkjs.dev">
+  <meta name="twitter:title" content="Spark">
+  <meta name="twitter:description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <meta name="twitter:image" content="https://opengraph.b-cdn.net/production/images/763a8fd8-7dad-4f91-ab27-e36a889c2d54.png?token=3c6AgBfDRclxcs5EBSW5KdHsgL0c5WObagFZHS6Xh9w&height=630&width=1200&expires=33285588022">
+  <!-- Meta Tags Generated via https://www.opengraph.xyz -->
+  <style>
+    .hero {
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 0;
+    }
+    .hero h2 {
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 0rem;
+    }
+
+    .hero iframe.hero-image {
+      width: 100%;
+      max-width: 800px;
+      height: 600px;
+      border-radius: 15px;
+      display: block;
+      margin: auto;
+      margin-top: 2rem;
+    }
+
+    .hero img {
+      display: block;
+      max-width: 550px;
+      margin:auto;
+    }
+
+    @media screen and (max-width: 60em) {
+      .hero img {
+        max-width: 320px;
+        margin:auto;
+      }
+      .hero h2 {
+        font-size: 22px;
+      }
+    }
+
+  </style>
+
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dyno-shaders" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid md-custom-header" aria-label="Header">
+
+    <!-- Left: Logo -->
+    <div class="md-header__title">
+      <a href="/" class="md-header__button md-logo">
+          <img src="/static/images/logo.svg" alt="Spark">
+      </a>
+    </div>
+
+    <label class="md-header__button md-icon" for="__search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+    </label>
+
+    <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Right: Custom links + search -->
+    <div class="md-custom-header-right">
+      <a href="/examples/" class="md-nav__link">Examples</a>
+      <a href="/docs/" class="md-nav__link">Docs</a>
+      <a href="/viewer/" class="md-nav__link">Viewer</a>
+        <a rel="noopener noreferrer" class="contrast" aria-label="Discord channel" href="https://discord.gg/W39qmSKemS" target="_blank">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="icon-discord" viewBox="0 -2 16 16">
+            <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+          </svg>
+        </a>
+      </div>
+      <a rel="noopener noreferrer" class="contrast" aria-label="GitHub repository" href="https://github.com/sparkjsdev/spark" target="_blank" style="margin-top: 5px;">
+        <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 496 475" class="icon-github">
+        <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path>
+        </svg>
+      </a>
+    </div>
+
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Spark" class="md-nav__button md-logo" aria-label="Spark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Spark
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spark-renderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SparkRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spark-viewpoint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SparkViewpoint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../splat-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SplatMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packed-splats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PackedSplats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loading-splats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading Gsplats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../procedural-splats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Procedural Splats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../splat-editing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Splat RGBA-XYZ SDF editing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dyno overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dyno overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#type-dynotype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        type DynoType
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="type DynoType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build-in-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build-in types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-dynovalt-extends-dynotype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        type DynoVal&lt;T extends DynoType&gt;
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="type DynoVal&lt;T extends DynoType&gt;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynoliteral-dynoliteral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoLiteral / dynoLiteral
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynoconst-dynoconst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoConst / dynoConst
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynooutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoOutput
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-dynointypes-outtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        class Dyno&lt;InTypes, OutTypes&gt;
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="class Dyno&lt;InTypes, OutTypes&gt;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-a-dyno" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a Dyno
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-functions-for-glsl-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helper functions for GLSL code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-dynoblockintypes-outtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        class DynoBlock&lt;InTypes, OutTypes&gt;
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helpers-to-design-dynos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helpers to design Dynos
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dyno-stdlib/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dyno standard library
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../controls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Controls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance tuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community Resources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#type-dynotype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        type DynoType
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="type DynoType">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build-in-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build-in types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-dynovalt-extends-dynotype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        type DynoVal&lt;T extends DynoType&gt;
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="type DynoVal&lt;T extends DynoType&gt;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynoliteral-dynoliteral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoLiteral / dynoLiteral
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynoconst-dynoconst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoConst / dynoConst
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynooutput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynoOutput
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-dynointypes-outtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        class Dyno&lt;InTypes, OutTypes&gt;
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="class Dyno&lt;InTypes, OutTypes&gt;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-a-dyno" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a Dyno
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-functions-for-glsl-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helper functions for GLSL code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-dynoblockintypes-outtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        class DynoBlock&lt;InTypes, OutTypes&gt;
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helpers-to-design-dynos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helpers to design Dynos
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="dyno-shaders">Dyno shaders</h1>
+<p>The <code>dyno</code> shader graph system is one of the architectural pillars of Spark, allowing you to create custom computation graphs using Javascript (and optionally GLSL) that are compiled to GLSL and run on the GPU, similar to shader graph systems in modern 3D graphics engines.</p>
+<p>A core component of this system is the class <code>Dyno</code> and its subclasses, which can be thought of as function blocks with multiple typed inputs and outputs. Values passed between such blocks are of type <code>DynoVal&lt;T&gt;</code>, where <code>T</code> must be a <code>DynoType</code>, representing a GPU type in GLSL. Using TypeScript, Spark ensures type safety and static validation of the GPU computation graph. </p>
+<p>All <code>dyno</code> code is contained within <code>src/dyno</code>, and has definitions which cover all built-in GLSL ES 3.0 types (<code>"int"</code>, <code>"float"</code>, <code>"vec"</code>, etc.) and most of the standard functions (<code>mul</code>, <code>cross</code>, <code>texelFetch</code>, etc.). Note that regular Javascript functions can't be part of a <code>dyno</code> computation graph: instead of <code>x + y</code> you should use <code>dyno.add(x, y)</code>. You can also define your own custom types and <code>dyno</code> blocks, both by compositing existing <code>dyno</code> functions or by writing GLSL code directly.</p>
+<p>Spark currently uses these Dynos in two main places:</p>
+<ul>
+<li>Dynamically generating splats from <code>SplatGenerator</code>/<code>SplatMesh</code> into the scene</li>
+<li>Computing the splat distance metric for CPU readback and sorting</li>
+</ul>
+<p>At the lowest layer, these are executed as pseudo-compute shaders by the classes <code>PackedSplats</code> and <code>Readback</code>, respectively. A <code>PackedSplats</code> is a collection of splats stored in a cache-efficient 16-byte/splat format, which can be loaded from a splat file URL, or generated via <code>dyno</code> program that maps an integer index <code>DynoVal&lt;"int"&gt;</code> to a <code>DynoVal&lt;Gsplat&gt;</code>, a GLSL struct type that contains all the splat parameters. Similarly, <code>Readback</code> takes a <code>dyno</code> program that maps an index <code>DynoVal&lt;"int"&gt;</code> to a RGBA8 value via a <code>DynoVal&lt;"vec4"&gt;</code>, producing a 32-bit value per index that can then be read back to the CPU for splat sorting.</p>
+<p>Learning to build and use <code>dyno</code> programs is probably best approached by starting with the Particle Simulation example and by examining <code>SplatMesh.constructGenerator()</code> for a more complex graph. <code>SplatMesh</code> also has two injection points <code>objectModifier</code> and <code>worldModifier</code> that allow you to inject <code>dyno</code> component into the standard splat generation pipeline to modify an existing splat object before it is rendered.</p>
+<h2 id="type-dynotype"><code>type DynoType</code></h2>
+<p>A <code>DynoType</code> can be either a string that corresponds to a built-in GLSL type, or <code>{ type: "MyType" }</code> for a user-defined type. These types are used both for identifying value types <code>DynoVal&lt;T extends DynoType&gt;</code> and for declaring input/output types for <code>Dyno</code> blocks, for example <code>{ index: "int" }</code> or <code>{ gsplat: Gsplat }</code> (<code>Gsplat</code> is defined as <code>{ type: "Gsplat" }</code>). Spark uses these to enforce TypeScript constraints on inputs+outputs of <code>Dyno</code> blocks to generate correct GLSL code.</p>
+<h3 id="build-in-types">Build-in types</h3>
+<p>A built-in GLSL type can be single-valued (<code>"int"</code>, <code>"uint"</code>, <code>"float"</code>, <code>"bool"</code>), vector (<code>"vec4"</code>, <code>"ivec3"</code>, <code>"bvec2"</code>), matrix (<code>"mat4"</code>, <code>"mat2x3"</code>), or a sampler (<code>"sampler2D"</code>, <code>"usampler3D"</code>, etc).</p>
+<h3 id="custom-types">Custom types</h3>
+<p>Spark defines a handful of custom types that are useful: <code>Gsplat</code>, <code>TPackedSplats</code>, <code>SdfArray</code>, <code>TRgbaArray</code>, and <code>SplatSkinning</code>.  For example, in <code>src/dyno/splats.ts</code> we define <code>Gsplat</code> as <code>{ type: "Gsplat" }</code> along with a helper function:</p>
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">defineGsplat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">unindent</span><span class="p">(</span><span class="sb">`</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="sb">  struct Gsplat {</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sb">    vec3 center;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="sb">    uint flags;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="sb">    vec3 scales;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sb">    int index;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sb">    vec4 quaternion;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="sb">    vec4 rgba;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sb">  };</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sb">  const uint GSPLAT_FLAG_ACTIVE = 1u &lt;&lt; 0u;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="sb">  bool isGsplatActive(uint flags) {</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="sb">    return (flags &amp; GSPLAT_FLAG_ACTIVE) != 0u;</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="sb">  }</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="sb">`</span><span class="p">);</span>
+</span></code></pre></div>
+<p>When declaring a new user type, you should also define how that type will appear in GLSL, along with any other definitions or utility functions that are useful for that type. When creating a new <code>Dyno</code> block you can then include these definitions wherever a <code>Gsplat</code> type is used to make sure these global definitions are available.</p>
+<h2 id="type-dynovalt-extends-dynotype"><code>type DynoVal&lt;T extends DynoType&gt;</code></h2>
+<p>A <code>DynoVal&lt;T extends DynoType&gt;</code> corresponds to a value of type <code>T</code> in the GLSL computation graph. These values can come from a literal/constant value, a uniform (a value that can be updated every frame from your program), or the output of a <code>Dyno</code> block.</p>
+<h3 id="dynoliteral-dynoliteral"><code>DynoLiteral</code> / <code>dynoLiteral</code></h3>
+<p>The class <code>DynoLiteral&lt;T extends DynoType&gt;</code> is a <code>DynoVal</code> whose constant value is given as a GLSL literal string. For example, <code>new DynoLiteral("float", "1.0")</code> or <code>new DynoLiteral("vec3", "vec3(1.0, 2.0, 3.0)")</code> produce <code>DynoVal</code>s that can be used as inputs in a <code>dyno</code> graph.</p>
+<p>The helper function <code>dynoLiteral(type, literal)</code> is a shorthand for <code>new DynoLiteral(type, literal)</code>.</p>
+<h3 id="dynoconst-dynoconst"><code>DynoConst</code> / <code>dynoConst</code></h3>
+<p>Creating a new <code>DynoConst&lt;T extends DynoType&gt;</code> is similar to a <code>DynoLiteral</code>, but the value is given as a Javascript value, which is converted to a GLSL literal string. For example, <code>new DynoConst("float", 1.0)</code> or <code>new DynoConst("vec3", new THREE.Vector3(1.0, 2.0, 3.0))</code> produce <code>DynoVal</code>s that can be used as inputs in a <code>dyno</code> graph.</p>
+<p>You can also use the helper function <code>dynoConst(type, value)</code> to create a <code>DynoConst</code>.</p>
+<h3 id="dynooutput"><code>DynoOutput</code></h3>
+<p>A <code>DynoOutput</code> is created internally in the <code>dyno</code> system to represent a particular named output of a <code>Dyno</code> block. For example, <code>dyno.splitGsplat</code> takes a <code>DynoVal&lt;Gsplat&gt;</code> as input and produces multiple outputs including <code>index</code>, <code>center</code>, <code>rgba</code>, etc., and selecting a particular output will yield the appropriate typed <code>DynoOutput</code>:</p>
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// opacity is a DynoOutput and also a DynoVal&lt;&quot;float&quot;&gt;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">opacity</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">splitGsplat</span><span class="p">(</span><span class="nx">gsplat</span><span class="p">);</span>
+</span></code></pre></div>
+<h2 id="class-dynointypes-outtypes"><code>class Dyno&lt;InTypes, OutTypes&gt;</code></h2>
+<p>A <code>Dyno</code> an abstract block that has named, typed inputs and outputs, both as part of its type signature (for TypeScript checking) and stored in the class (for runtime access). When creating a new <code>Dyno</code> the following constructor options are available:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Option</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inTypes</code></td>
+<td>A map from input name to <code>DynoType</code>, for example <code>{ index: "int" }</code>. This must match the template parameter <code>InTypes</code> of the <code>Dyno</code> class.</td>
+</tr>
+<tr>
+<td><code>outTypes</code></td>
+<td>A map from output name to <code>DynoType</code>, for example <code>{ rgba: "vec4" }</code>. This must match the template parameter <code>OutTypes</code> of the <code>Dyno</code> class.</td>
+</tr>
+<tr>
+<td><code>inputs</code></td>
+<td>A mapping of input values that are passed to the <code>Dyno</code>, where the type of <code>DynoVal&lt;T&gt;</code> must match the <code>DynoType</code> in <code>inTypes</code>.</td>
+</tr>
+<tr>
+<td><code>update</code></td>
+<td>Optional function that is called (no return value) each time a program containing this <code>Dyno</code> is executed. This can for example be used to update any uniforms before running.</td>
+</tr>
+<tr>
+<td><code>globals</code></td>
+<td>Optional function that outputs global GLSL definitions needed by this block, as an array of strings. Duplicate global definition strings within the same program will be deduplicated, so you should always define all the globals you need for this block without regard to whether they are defined elsewhere.</td>
+</tr>
+<tr>
+<td><code>statements</code></td>
+<td>Optional function that outputs the GLSL statements to execute for this block as an array of strings. When defining a custom <code>Dyno</code> that executes GLSL, this is where your code will go.</td>
+</tr>
+<tr>
+<td><code>generate</code></td>
+<td>Called internally by the <code>dyno</code> compiler to generate the globals, statements, and any uniforms needed for this block. The default <code>generate</code> implementation will call <code>globals</code> and <code>statements</code> if they are defined and return these to the compiler.</td>
+</tr>
+</tbody>
+</table>
+<p>The methods <code>globals</code>, <code>statements</code>, and <code>generate</code> all take a <code>GenerateContext</code> object as argument, which consists of three properties:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Property</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inputs</code></td>
+<td>A map from the input key to the <em>actual</em> GLSL variable name of that input value. The compiler will create unique names for values passed between blocks so you can reuse the same input key. If an input is NOT attached, the value will be <code>undefined</code>.</td>
+</tr>
+<tr>
+<td><code>outputs</code></td>
+<td>A map from the output key to the <em>actual</em> GLSL variable name of that output value. The compiler will create unique names for values passed between blocks so you can reuse the same output key. If an output is NOT connected, the value will be <code>undefined</code>.</td>
+</tr>
+<tr>
+<td><code>compile</code></td>
+<td>An instance of class <code>Compilation</code> that stores the context for the ongoing compilation, including global defines, statements to execute, uniforms, indentation level, etc.</td>
+</tr>
+</tbody>
+</table>
+<p>Typically you will want to define a <code>Dyno</code> subclass that constructs a <code>Dyno</code> instance with the appropriate <code>globals</code>, <code>statements</code>, and <code>update</code> etc. for your block. When generating code, use the passed in <code>GenerateContext</code> to get the names of inputs and outputs, and generate code that uses those names (via string interpolation or similar).</p>
+<h3 id="using-a-dyno">Using a <code>Dyno</code></h3>
+<p>Once defined, using your <code>Dyno</code> will typically be done as follows:
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">sum</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">Add</span><span class="p">({</span><span class="w"> </span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><span class="p">}).</span><span class="nx">outputs</span><span class="p">;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// Or equivalently:</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">sum</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="p">).</span><span class="nx">outputs</span><span class="p">;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// For Dynos that implement HasDynoOut&lt;T&gt; you can also do</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kd">const</span><span class="w"> </span><span class="nx">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="p">);</span>
+</span></code></pre></div></p>
+<p>The property <code>outputs</code> is a map from output name to a <code>DynoVal&lt;T&gt;</code> for each output type in <code>outTypes</code> (internally they are <code>DynoOutput</code>s).</p>
+<p>For a <code>Dyno</code> that only has a single output, you can also implement the method <code>dynoOut(): DynoValue&lt;T&gt;</code> (which corresponds to the interface <code>HasDynoOut&lt;T&gt;</code>) to pick out a default output from <code>outputs</code>, which can help reduce redundant <code>.outputs</code> calls.</p>
+<h3 id="helper-functions-for-glsl-code">Helper functions for GLSL code</h3>
+<p><code>unindentLines(s: string): string[]</code>: Takes a multi-line string, removes common leading whitespace from each line, and returns the resulting array of strings. This can be useful to prepare an array of <code>statements</code> from a block of GLSL code:
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">leftAlignedLines</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">unindentLines</span><span class="p">(</span><span class="sb">`</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="sb">    float sqr(float x) {</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="sb">      return x * x;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="sb">    }</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="sb">`</span><span class="p">);</span>
+</span></code></pre></div></p>
+<p><code>unindent(s: string): string</code>: Same as for <code>unindentLines</code> but joins the resulting lines into a single string. This is useful for defining a <code>globals</code>, which are de-duplicated based on the entirety of the string rather than individual lines.</p>
+<h2 id="class-dynoblockintypes-outtypes"><code>class DynoBlock&lt;InTypes, OutTypes&gt;</code></h2>
+<p>A <code>DynoBlock</code> is a <code>Dyno</code> that is like a "module" in that it can contain a <code>Dyno</code> subgraph internally that is created in a closure. Although you can construct a <code>DynoBlock</code> directly it is more ergnomic to use the helper function <code>dynoBlock</code>:</p>
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">myGsplatGenerator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">dynoBlock</span><span class="p">(</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">index</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;int&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// Inputs</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="nx">gsplat</span><span class="o">:</span><span class="w"> </span><span class="kt">Gsplat</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="c1">// Outputs</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="p">({</span><span class="w"> </span><span class="nx">index</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// Closure mapping inputs to outputs</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">gsplat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">readPackedSplat</span><span class="p">(</span><span class="nx">myPackedSplats</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">);</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">opacity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">dynoConst</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">);</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nx">gsplat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">combineGsplat</span><span class="p">({</span><span class="w"> </span><span class="nx">gsplat</span><span class="p">,</span><span class="w"> </span><span class="nx">opacity</span><span class="w"> </span><span class="p">});</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">gsplat</span><span class="w"> </span><span class="p">};</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">);</span>
+</span></code></pre></div>
+<p>The first argument is mapping from input keys to <code>DynoType</code>, the second for output keys, and the third argument is a closure that constructs a <code>dyno</code> graph from the input <code>DynoVal</code>s and any other external <code>DynoVal</code>s (such as <code>myPackedSplats</code> in this example), and must return a map of <code>DynoVal</code>s that match the output keys. An optional fourth argument allows you to pass in additional arguments <code>update</code> (called before program execution) and <code>globals</code> (for any global definitions needed by the block).</p>
+<h2 id="helpers-to-design-dynos">Helpers to design Dynos</h2>
+<p>When creating blocks that are simple operations of 1-3 inputs you can use the helper classes <code>UnaryOp</code>, <code>BinaryOp</code>, and <code>TrinaryOp</code>, which help standardize the interface. You must override the class' <code>statements</code> or <code>generate</code> method to generate the code. See examples in <code>src/dyno/math.ts</code> for how to use them.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy"], "search": "../../static/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../static/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

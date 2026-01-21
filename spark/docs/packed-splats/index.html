@@ -1,0 +1,1610 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://sparkjs.dev/docs/packed-splats/">
+      
+      
+        <link rel="prev" href="../splat-mesh/">
+      
+      
+        <link rel="next" href="../loading-splats/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../static/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>PackedSplats - Spark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../static/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/spark.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+  <meta name="description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <!-- Facebook Meta Tags -->
+  <meta property="og:url" content="https://sparkjs.dev">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Spark">
+  <meta property="og:description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <meta property="og:image" content="https://opengraph.b-cdn.net/production/images/763a8fd8-7dad-4f91-ab27-e36a889c2d54.png?token=3c6AgBfDRclxcs5EBSW5KdHsgL0c5WObagFZHS6Xh9w&height=630&width=1200&expires=33285588022">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="twitter:domain" content="sparkjs.dev">
+  <meta property="twitter:url" content="https://sparkjs.dev">
+  <meta name="twitter:title" content="Spark">
+  <meta name="twitter:description" content="An advanced 3D Gaussian Splatting renderer for THREE.js">
+  <meta name="twitter:image" content="https://opengraph.b-cdn.net/production/images/763a8fd8-7dad-4f91-ab27-e36a889c2d54.png?token=3c6AgBfDRclxcs5EBSW5KdHsgL0c5WObagFZHS6Xh9w&height=630&width=1200&expires=33285588022">
+  <!-- Meta Tags Generated via https://www.opengraph.xyz -->
+  <style>
+    .hero {
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 0;
+    }
+    .hero h2 {
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 0rem;
+    }
+
+    .hero iframe.hero-image {
+      width: 100%;
+      max-width: 800px;
+      height: 600px;
+      border-radius: 15px;
+      display: block;
+      margin: auto;
+      margin-top: 2rem;
+    }
+
+    .hero img {
+      display: block;
+      max-width: 550px;
+      margin:auto;
+    }
+
+    @media screen and (max-width: 60em) {
+      .hero img {
+        max-width: 320px;
+        margin:auto;
+      }
+      .hero h2 {
+        font-size: 22px;
+      }
+    }
+
+  </style>
+
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#packedsplats" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid md-custom-header" aria-label="Header">
+
+    <!-- Left: Logo -->
+    <div class="md-header__title">
+      <a href="/" class="md-header__button md-logo">
+          <img src="/static/images/logo.svg" alt="Spark">
+      </a>
+    </div>
+
+    <label class="md-header__button md-icon" for="__search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+    </label>
+
+    <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Right: Custom links + search -->
+    <div class="md-custom-header-right">
+      <a href="/examples/" class="md-nav__link">Examples</a>
+      <a href="/docs/" class="md-nav__link">Docs</a>
+      <a href="/viewer/" class="md-nav__link">Viewer</a>
+        <a rel="noopener noreferrer" class="contrast" aria-label="Discord channel" href="https://discord.gg/W39qmSKemS" target="_blank">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="icon-discord" viewBox="0 -2 16 16">
+            <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+          </svg>
+        </a>
+      </div>
+      <a rel="noopener noreferrer" class="contrast" aria-label="GitHub repository" href="https://github.com/sparkjsdev/spark" target="_blank" style="margin-top: 5px;">
+        <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 496 475" class="icon-github">
+        <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path>
+        </svg>
+      </a>
+    </div>
+
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Spark" class="md-nav__button md-logo" aria-label="Spark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Spark
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spark-renderer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SparkRenderer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spark-viewpoint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SparkViewpoint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../splat-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SplatMesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PackedSplats
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PackedSplats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-packedsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a PackedSplats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a PackedSplats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoding-decoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encoding / Decoding
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Encoding / Decoding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#byte-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Byte Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-rgba-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat RGBA encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-center-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat center encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-scales-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat scales encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-orientation-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat orientation encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extra-splat-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extra splat data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packedsplats-instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackedSplats instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PackedSplats instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dispose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dispose()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensuresplatsnumsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureSplats(numSplats)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getsplatindex-center-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getSplat(index): { center, scales, quaternion, opacity, color }
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setsplatindex-center-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setSplat(index, center, scales, quaternion, opacity, color)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pushsplatcenter-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pushSplat(center, scales, quaternion, opacity, color)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foreachsplatcallback-index-center-scales-quaternion-opacity-color-void" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        forEachSplat(callback: (index, center, scales, quaternion, opacity, color) =&gt; void)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gettexture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getTexture()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getempty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getEmpty()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-splats-on-the-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating splats on the GPU
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generating splats on the GPU">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generatemappingsplatcounts-number-maxsplats-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generateMapping(splatCounts: number[]): { maxSplats, mapping[] }
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensuregeneratemaxsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureGenerate(maxSplats)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-generator-base-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate({ generator, base, count, ... })
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-dynamic-packedsplats-inputs-in-dyno" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using dynamic PackedSplats inputs in dyno
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loading-splats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading Gsplats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../procedural-splats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Procedural Splats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../splat-editing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Splat RGBA-XYZ SDF editing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dyno-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dyno overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dyno-stdlib/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dyno standard library
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../controls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Controls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance tuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Community Resources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-packedsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a PackedSplats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a PackedSplats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoding-decoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encoding / Decoding
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Encoding / Decoding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#byte-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Byte Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-rgba-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat RGBA encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-center-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat center encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-scales-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat scales encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splat-orientation-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Splat orientation encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extra-splat-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extra splat data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packedsplats-instance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PackedSplats instance methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PackedSplats instance methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dispose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dispose()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensuresplatsnumsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureSplats(numSplats)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getsplatindex-center-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getSplat(index): { center, scales, quaternion, opacity, color }
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setsplatindex-center-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setSplat(index, center, scales, quaternion, opacity, color)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pushsplatcenter-scales-quaternion-opacity-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pushSplat(center, scales, quaternion, opacity, color)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foreachsplatcallback-index-center-scales-quaternion-opacity-color-void" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        forEachSplat(callback: (index, center, scales, quaternion, opacity, color) =&gt; void)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gettexture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getTexture()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getempty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        getEmpty()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-splats-on-the-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating splats on the GPU
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generating splats on the GPU">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generatemappingsplatcounts-number-maxsplats-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generateMapping(splatCounts: number[]): { maxSplats, mapping[] }
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ensuregeneratemaxsplats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ensureGenerate(maxSplats)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate-generator-base-count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate({ generator, base, count, ... })
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-dynamic-packedsplats-inputs-in-dyno" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using dynamic PackedSplats inputs in dyno
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="packedsplats">PackedSplats</h1>
+<p>A <code>PackedSplats</code> is a collection of Gaussian splats, packed into a format that takes exactly 16 bytes per splat to maximize memory and cache efficiency. The <code>center</code> xyz coordinates are encoded as float16 (3 x 2 bytes), <code>scale</code> xyz as 3 x uint8 that encode a log scale from e^-12 to e^9, <code>rgba</code> as 4 x uint8, and quaternion encoded via axis+angle using 2 x uint8 for octahedral encoding of the axis direction and a uint8 to encode rotation amount from 0..Pi.</p>
+<h2 id="creating-a-packedsplats">Creating a <code>PackedSplats</code></h2>
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">packedSplats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">PackedSplats</span><span class="p">({</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="c1">// Fetch PLY/SPZ/SPLAT/KSPLAT file from URL</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nx">url?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="c1">// Decode raw PLY/SPZ/SPLAT/KSPLAT file bytes</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nx">fileBytes?</span><span class="o">:</span><span class="w"> </span><span class="kt">Uint8Array</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="nb">ArrayBuffer</span><span class="p">;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="c1">// Override file type</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nx">fileType?</span><span class="o">:</span><span class="w"> </span><span class="kt">SplatFileType</span><span class="p">;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="c1">// Reserve space for at least this many splats for construction</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nx">maxSplats?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="c1">// Use provided packed data array, 4 words per splat</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="nx">packedArray?</span><span class="o">:</span><span class="w"> </span><span class="kt">Uint32Array</span><span class="p">;</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="c1">// Override number of splats in packed array to a subset</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="nx">numSplats?</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span><span class="c1">// Constructor callback to create splats</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="nx">construct</span><span class="o">?:</span><span class="w"> </span><span class="p">(</span><span class="nx">splats</span><span class="o">:</span><span class="w"> </span><span class="kt">PackedSplats</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="c1">// Extra splat data, such as sh1..3 components</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nx">extra?</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">});</span>
+</span></code></pre></div>
+<h3 id="optional-parameters">Optional parameters</h3>
+<p>Like for <code>SplatMesh</code> you can create a <code>new PackedSplats()</code> with no options, which will create a new empty instance with 0 splats. Similarly, you can provide an input <code>url</code> or <code>fileBytes</code> to decode from a file source. You can also create a <code>PackedSplats</code> from a raw <code>Uint32Array</code> where each successive 4 Uint32 values encodes one "packed" splat. Finally, a <code>construct(splats)</code> callback provides an ergonomic way to create splats procedurally with an in-line initialization closure.</p>
+<table>
+<thead>
+<tr>
+<th><strong>Parameter</strong></th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>url</strong></td>
+<td>URL to fetch a Gaussian splat file from (supports .ply, .splat, .ksplat, .spz formats). (default: <code>undefined</code>)</td>
+</tr>
+<tr>
+<td><strong>fileBytes</strong></td>
+<td>Raw bytes of a Gaussian splat file to decode directly instead of fetching from URL. (default: <code>undefined</code>)</td>
+</tr>
+<tr>
+<td><strong>fileType</strong></td>
+<td>Override the file type detection for formats that can't be reliably auto-detected (.splat, .ksplat). (default: <code>undefined</code> auto-detects other formats from file contents)</td>
+</tr>
+<tr>
+<td><strong>maxSplats</strong></td>
+<td>Reserve space for at least this many splats when constructing the collection initially. The array will automatically resize past maxSplats so setting it is an optional optimization. (default: <code>0</code>)</td>
+</tr>
+<tr>
+<td><strong>packedArray</strong></td>
+<td>Use provided packed data array, where each 4 consecutive uint32 values encode one "packed" splat. (default: <code>undefined</code>)</td>
+</tr>
+<tr>
+<td><strong>numSplats</strong></td>
+<td>Override number of splats in packed array to use only a subset. (default: length of packed array / 4)</td>
+</tr>
+<tr>
+<td><strong>construct</strong></td>
+<td>Callback function to programmatically create splats at initialization. (default: <code>undefined</code>)</td>
+</tr>
+<tr>
+<td><strong>extra</strong></td>
+<td>Additional splat data, such as spherical harmonics components (sh1, sh2, sh3). (default: <code>{}</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="encoding-decoding">Encoding / Decoding</h2>
+<p>Utility functions are provided in Javascript to pack/unpack these encodings:
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Set via packedSplats interface</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">setSplat</span><span class="p">(</span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">center</span><span class="p">,</span><span class="w"> </span><span class="nx">scales</span><span class="p">,</span><span class="w"> </span><span class="nx">quaternion</span><span class="p">,</span><span class="w"> </span><span class="nx">opacity</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="p">);</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">// Set underlying Uint32 array directly</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">utils</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s2">&quot;@sparkjsdev/spark&quot;</span><span class="p">;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nx">utils</span><span class="p">.</span><span class="nx">setPackedSplat</span><span class="p">(</span><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">packedArray</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">x</span><span class="p">,</span><span class="w"> </span><span class="nx">y</span><span class="p">,</span><span class="w"> </span><span class="nx">z</span><span class="p">,</span><span class="w"> </span><span class="nx">scaleX</span><span class="p">,</span><span class="w"> </span><span class="nx">scaleY</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1">// Set rotation components of underlying Uint32 array directly</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="nx">utils</span><span class="p">.</span><span class="nx">setPackedSplatQuat</span><span class="p">(</span><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">packedArray</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">quatX</span><span class="p">,</span><span class="w"> </span><span class="nx">quatY</span><span class="p">,</span><span class="w"> </span><span class="nx">quatZ</span><span class="p">,</span><span class="w"> </span><span class="nx">quatW</span><span class="p">);</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1">// Unpack all splat components from the Uint32 array</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">center</span><span class="p">,</span><span class="w"> </span><span class="nx">scales</span><span class="p">,</span><span class="w"> </span><span class="nx">quaternion</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="p">,</span><span class="w"> </span><span class="nx">opacity</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">utils</span><span class="p">.</span><span class="nx">unpackSplat</span><span class="p">(</span><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">packedArray</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">);</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="c1">// Unpack all splats with callback</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">forEachSplat</span><span class="p">((</span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">center</span><span class="p">,</span><span class="w"> </span><span class="nx">scales</span><span class="p">,</span><span class="w"> </span><span class="nx">quaternion</span><span class="p">,</span><span class="w"> </span><span class="nx">opacity</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="c1">// Use unpacked splat data. Changing the inputs directly has no effect.</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="c1">// Update just the scales component</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="nx">utils</span><span class="p">.</span><span class="nx">setPackedSplatScales</span><span class="p">(</span><span class="nx">packedSplat</span><span class="p">.</span><span class="nx">packedArray</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="mf">0.005</span><span class="p">,</span><span class="w"> </span><span class="mf">0.01</span><span class="p">,</span><span class="w"> </span><span class="mf">0.015</span><span class="p">);</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">    </span><span class="c1">// Update the entire splat</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="nx">packedSplat</span><span class="p">.</span><span class="nx">setSplat</span><span class="p">(</span><span class="nx">index</span><span class="p">,</span><span class="w"> </span><span class="nx">center</span><span class="p">,</span><span class="w"> </span><span class="nx">scales</span><span class="p">,</span><span class="w"> </span><span class="nx">quaternion</span><span class="p">,</span><span class="w"> </span><span class="nx">opacity</span><span class="p">,</span><span class="w"> </span><span class="nx">color</span><span class="p">);</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="p">});</span>
+</span></code></pre></div></p>
+<p>In GLSL code you can use the following utility functions that are available via <code>splatDefines.glsl</code>, which is included in all GLSL shader programs:
+<div class="language-glsl highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Pack a splat into a uvec4</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kt">uvec4</span><span class="w"> </span><span class="n">packSplat</span><span class="p">(</span><span class="kt">vec3</span><span class="w"> </span><span class="n">center</span><span class="p">,</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">scales</span><span class="p">,</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">quaternion</span><span class="p">,</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">);</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Unpack a splat from a uvec4</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kt">void</span><span class="w"> </span><span class="n">unpackSplat</span><span class="p">(</span><span class="kt">uvec4</span><span class="w"> </span><span class="n">packed</span><span class="p">,</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">center</span><span class="p">,</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec3</span><span class="w"> </span><span class="n">scales</span><span class="p">,</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">quaternion</span><span class="p">,</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">vec4</span><span class="w"> </span><span class="n">rgba</span><span class="p">);</span>
+</span></code></pre></div></p>
+<p>In <code>dyno</code> shader contexts you can read and unpack a splat from a <code>PackedSplats</code>:
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Fetch and unpack a particular index from a PackedSplats.</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">const</span><span class="w"> </span><span class="nx">gsplat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dyno</span><span class="p">.</span><span class="nx">readPackedSplat</span><span class="p">(</span><span class="nx">packedSplats</span><span class="p">.</span><span class="nx">dyno</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">);</span>
+</span></code></pre></div></p>
+<h3 id="byte-layout">Byte Layout</h3>
+<p>Each <code>PackedSplat</code> occupies 16 bytes (4 × <code>uint32</code>), with the following layout of fields by byte offset:</p>
+<table>
+<thead>
+<tr>
+<th>Offset (bytes)</th>
+<th>Field</th>
+<th>Size (bytes)</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>R</td>
+<td>1</td>
+<td>Red color channel (uint8 0–255 → 0.0–1.0)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>G</td>
+<td>1</td>
+<td>Green color channel (uint8 0–255 → 0.0–1.0)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>B</td>
+<td>1</td>
+<td>Blue color channel (uint8 0–255 → 0.0–1.0)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>A</td>
+<td>1</td>
+<td>Alpha (opacity) channel (uint8 0–255 → 0.0–1.0)</td>
+</tr>
+<tr>
+<td>4–5</td>
+<td>center.x</td>
+<td>2</td>
+<td>X coordinate of splat center (float16)</td>
+</tr>
+<tr>
+<td>6–7</td>
+<td>center.y</td>
+<td>2</td>
+<td>Y coordinate of splat center (float16)</td>
+</tr>
+<tr>
+<td>8–9</td>
+<td>center.z</td>
+<td>2</td>
+<td>Z coordinate of splat center (float16)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>quat oct.U</td>
+<td>1</td>
+<td>Octahedral quaternion U component (uint8)</td>
+</tr>
+<tr>
+<td>11</td>
+<td>quat oct.V</td>
+<td>1</td>
+<td>Octahedral quaternion V component (uint8)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>scale.x</td>
+<td>1</td>
+<td>X scale, log-encoded to uint8</td>
+</tr>
+<tr>
+<td>13</td>
+<td>scale.y</td>
+<td>1</td>
+<td>Y scale, log-encoded to uint8</td>
+</tr>
+<tr>
+<td>14</td>
+<td>scale.z</td>
+<td>1</td>
+<td>Z scale, log-encoded to uint8</td>
+</tr>
+<tr>
+<td>15</td>
+<td>quat angle (θ)</td>
+<td>1</td>
+<td>Encoded quaternion rotation angle (uint8, θ/π·255)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="splat-rgba-encoding">Splat RGBA encoding</h3>
+<p>RGB values are encoded are uint8 sRGB values with 0..255 mapping to 0..1. When loading from a PLY file these values are derived by calculating <code>ply[f_dc_0] * SH_C0 + 0.5</code>.</p>
+<p>Opacity is encoded on a linear scale where 0..255 maps to 0..1.</p>
+<h3 id="splat-center-encoding">Splat center encoding</h3>
+<p>The center x/y/z components are encoded as float16, which provides 10 bits of mantissa, or approximately 1K steps (0.1%) of resolution between each successive power of 0 from the origin, with a range of up to 32K in distance. If most of the splats are positioned relative to the origin this provides enough positional resolution. Splats that are transformed far from the origin, however (for example when bringing multiple <code>SplatMesh</code>es together in a scene that are far apart) may lose precision when mapped to the space of <code>SparkRenderer</code>. For scenes where the user camera may move far from the origin, you may want to tie the <code>SparkRenderer</code> origin to your camera by adding it as a child of the camera.</p>
+<h3 id="splat-scales-encoding">Splat scales encoding</h3>
+<p>The XYZ scales are encoded independently using the following mapping: Any scale values below e^-30 are interpreted as "true zero" scale, and encoded as <code>uint8(0)</code>. Any other values quantized by computing <code>ln(scale_xyz)</code>, mapping the range e^-12..e^9 to uint8 values 1..255, rounding, and clamping. This logarithmic scale range can encode values from 0.0001 up to 8K in scale, with approximately 7% steps between discrete sizes, and has minimal impact on perceptible visual quality.</p>
+<h3 id="splat-orientation-encoding">Splat orientation encoding</h3>
+<p>We encode a splat's quaternion/orientation by encoding it explicitly in an axis + angle representation: 8 bits for each U/V coordinate for octahedral encoding of the axis direction, and 8 bits to encode the rotation angle range 0..Pi.</p>
+<p>This representation was chosen over other internal rotation representations because it provides a good mix of speed/simplicity, uniformity of representable orientations, and especially its ability to handle rotations "near identity". Other encodings such as the more common "3 quaternion components" tend to have poor rotational resolution around I(1), which is a particularly important regime of this parameter.</p>
+<h3 id="extra-splat-data"><code>extra</code> splat data</h3>
+<p>Each instance of <code>PackedSplats</code> also has a property <code>extra: Record&lt;string, unknown&gt;</code> that is used to attach additional splat-related data to the <code>PackedSplats</code> container. For example, spherical harmonics degrees 1..3 are stored in <code>sh1: Uint32Array(numSplats * 2)</code>, <code>sh2: Uint32Array(numSplats * 4)</code>, <code>sh3: Uint32Array(numSplats * 4)</code>, and intermediate textures are generated by <code>SplatMesh</code> and stored as <code>sh1Texture</code> etc.</p>
+<p>This structure can be used to extend and store additional data in a <code>PackedSplats</code>, but there is no specific convention yet to prevent collisions.</p>
+<p><code>sh1</code> stores each of 3 x 3 RGB signed components as Sint7 (mapping -1..1) in 63 bits (8 bytes) per splat. <code>sh2</code> stores each of 5 x 3 RGB signed components as Sint8 in 120 bits (16 bytes). <code>sh3</code> stores each of 7 x 3 RGB signed components as Sint6 in 126 bits (16 bytes) to improve memory bandwidth efficiency. Note that using spherical harmonics dramatically increases the memory footprint from 16 bytes per splat up to 56 bytes per splat with SH0..3, which can impact rendering performance.</p>
+<h2 id="packedsplats-instance-methods"><code>PackedSplats</code> instance methods</h2>
+<h3 id="dispose"><code>dispose()</code></h3>
+<p>Call this when you are finished with the PackedSplats and want to free any render targets + textures it holds.</p>
+<h3 id="ensuresplatsnumsplats"><code>ensureSplats(numSplats)</code></h3>
+<p>Ensures that <code>this.packedArray</code> can fit <code>numSplats</code> splats. If it's too small, resize exponentially and copy over the original data.</p>
+<p>Typically you don't need to call this, because calling <code>this.setSplat(index, ...)</code> and <code>this.pushSplat(...)</code> will automatically call <code>ensureSplats()</code> so we have enough splats.</p>
+<h3 id="getsplatindex-center-scales-quaternion-opacity-color"><code>getSplat(index): { center, scales, quaternion, opacity, color }</code></h3>
+<p>Unpack the 16-byte splat data at <code>index</code> into the THREE.js components <code>center: THREE.Vector3</code>, <code>scales: THREE.Vector3</code>, <code>quaternion: THREE.Quaternion</code>, <code>opacity: number 0..1</code>, <code>color: THREE.Color 0..1</code>.</p>
+<h3 id="setsplatindex-center-scales-quaternion-opacity-color"><code>setSplat(index, center, scales, quaternion, opacity, color)</code></h3>
+<p>Set all PackedSplat components at <code>index</code> with the provided splat attributes (can be the same objects returned by <code>getSplat</code>). Ensures there is capacity for at least <code>index+1</code> splats.</p>
+<h3 id="pushsplatcenter-scales-quaternion-opacity-color"><code>pushSplat(center, scales, quaternion, opacity, color)</code></h3>
+<p>Effectively calls <code>this.setSplat(this.numSplats++, center, ...)</code>, useful on construction where you just want to iterate and create a collection of splats.</p>
+<h3 id="foreachsplatcallback-index-center-scales-quaternion-opacity-color-void"><code>forEachSplat(callback: (index, center, scales, quaternion, opacity, color) =&gt; void)</code></h3>
+<p>Iterate over splats index <code>0..=(this.numSplats-1)</code>, unpack each splat and invoke the callback function with the splat attributes.</p>
+<h3 id="gettexture"><code>getTexture()</code></h3>
+<p>Returns a <code>THREE.DataArrayTexture</code> representing the PackedSplats content as a Uint32x4 data array texture (2048 x 2048 x depth in size)</p>
+<h3 id="getempty"><code>getEmpty()</code></h3>
+<p>Can be used where you need an uninitialized <code>THREE.DataArrayTexture</code> like a uniform you will update with the result of <code>this.getTexture()</code> later.</p>
+<h2 id="generating-splats-on-the-gpu">Generating splats on the GPU</h2>
+<p>To generate a large number of splats we can use the <code>dyno</code> shader graph system, which allows you to create a computation graph mapping <code>{ index: DynoVal&lt;"int"&gt; }</code> to <code>{ gsplat: DynoVal&lt;Gsplat&gt; }</code> via Javascript code, then have that synthesize GLSL code, which is finally compiled and executed in parallel on the GPU.</p>
+<p>This building block is used by <code>SparkRenderer</code> to traverse each visible <code>SplatMesh</code>/<code>SplatGenerator</code> and have it "generate" its splats into the global <code>PackedSplats</code> array managed by a <code>SplatAccumulator</code>. At its core a <code>PackedSplats</code> has the ability to run <code>dyno</code> computation graphs to produce its contents using the following methods, which are typically managed by <code>SparkRenderer</code>:</p>
+<h3 id="generatemappingsplatcounts-number-maxsplats-mapping"><code>generateMapping(splatCounts: number[]): { maxSplats, mapping[] }</code></h3>
+<p>Given an array of splatCounts (<code>.numSplats</code> for each <code>SplatGenerator</code>/<code>SplatMesh</code> in the scene), compute a "mapping layout" in the composite array of generated outputs.</p>
+<h3 id="ensuregeneratemaxsplats"><code>ensureGenerate(maxSplats)</code></h3>
+<p>Ensures our <code>PackedSplats.target</code> render target has enough space to generate <code>maxSplats</code> total splats, and reallocate if not large enough.</p>
+<h3 id="generate-generator-base-count"><code>generate({ generator, base, count, ... })</code></h3>
+<p>Executes a <code>dyno</code> program specified by <code>generator</code> which is any <code>DynoBlock</code> that maps <code>{ index: "int" }</code> to <code>{ gsplat: Gsplat }</code>. This is invoked from <code>SparkRenderer.updateInternal()</code> to re-generate splats in the scene for <code>SplatGenerator</code> instances whose version is newer than last generated version.</p>
+<h2 id="using-dynamic-packedsplats-inputs-in-dyno">Using dynamic PackedSplats inputs in <code>dyno</code></h2>
+<p>You can use a <code>PackedSplats</code> in a <code>dyno</code> block using the function <code>dyno.readPackedSplats(packedSplats.dyno, dynoIndex)</code> where <code>dynoIndex</code> is of type <code>DynoVal&lt;"int"&gt;</code> If you need to be able to change the input <code>PackedSplats</code> dynamically, however, you should create a <code>DynoPackedSplats</code>, whose property <code>packedSplats</code> you can set to any <code>PackedSplats</code>, which will be used in the next <code>dyno</code> shader program execution.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy"], "search": "../../static/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../static/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
