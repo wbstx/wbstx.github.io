@@ -1,99 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://sparkjs.dev/</loc>
+         <loc>https://wbstx.github.io/spark/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/</loc>
+         <loc>https://wbstx.github.io/spark/docs/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/community-resources/</loc>
+         <loc>https://wbstx.github.io/spark/docs/community-resources/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/controls/</loc>
+         <loc>https://wbstx.github.io/spark/docs/controls/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/dyno-overview/</loc>
+         <loc>https://wbstx.github.io/spark/docs/dyno-overview/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/dyno-stdlib/</loc>
+         <loc>https://wbstx.github.io/spark/docs/dyno-stdlib/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/loading-splats/</loc>
+         <loc>https://wbstx.github.io/spark/docs/loading-splats/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/overview/</loc>
+         <loc>https://wbstx.github.io/spark/docs/overview/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/packed-splats/</loc>
+         <loc>https://wbstx.github.io/spark/docs/packed-splats/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/performance/</loc>
+         <loc>https://wbstx.github.io/spark/docs/performance/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/procedural-splats/</loc>
+         <loc>https://wbstx.github.io/spark/docs/procedural-splats/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/spark-renderer/</loc>
+         <loc>https://wbstx.github.io/spark/docs/spark-renderer/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/spark-viewpoint/</loc>
+         <loc>https://wbstx.github.io/spark/docs/spark-viewpoint/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/splat-editing/</loc>
+         <loc>https://wbstx.github.io/spark/docs/splat-editing/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/splat-mesh/</loc>
+         <loc>https://wbstx.github.io/spark/docs/splat-mesh/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/docs/system-design/</loc>
+         <loc>https://wbstx.github.io/spark/docs/system-design/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/lil-gui/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/lil-gui/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/lil-gui/LICENSE/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/lil-gui/LICENSE/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/examples/fonts/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/examples/fonts/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/examples/fonts/ttf/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/examples/fonts/ttf/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/examples/jsm/libs/basis/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/examples/jsm/libs/basis/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/examples/jsm/libs/draco/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/examples/jsm/libs/draco/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
     <url>
-         <loc>https://sparkjs.dev/examples/js/vendor/three/src/nodes/materialx/DISCLAIMER/</loc>
+         <loc>https://wbstx.github.io/spark/examples/js/vendor/three/src/nodes/materialx/DISCLAIMER/</loc>
          <lastmod>2026-01-21</lastmod>
     </url>
 </urlset>
