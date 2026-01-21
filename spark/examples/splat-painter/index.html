@@ -77,6 +77,7 @@
       brushEnabled: dyno.dynoBool(false),
       undoEnabled: dyno.dynoBool(false),
       brushDepth: dyno.dynoFloat(10.0),
+      brushDepthFar: dyno.dynoFloat(10.0),
       brushRadius: dyno.dynoFloat(0.05),
       brushOrigin: dyno.dynoVec3(new THREE.Vector3(0.0, 0.0, 0.0)),
       brushDirection: dyno.dynoVec3(new THREE.Vector3(0.0, 0.0, 0.0)),
@@ -100,6 +101,7 @@
         undoEnabled,
         brushRadius,
         brushDepth,
+        brushDepthFar,
         brushOrigin,
         brushDirection,
         brushColor,
@@ -115,9 +117,14 @@
             const projectionAmplitude = dyno.dot(brushDirection, dyno.sub(center, brushOrigin));
             const projectedCenter = dyno.add(brushOrigin, dyno.mul(brushDirection, projectionAmplitude));
             const distance = dyno.length(dyno.sub(projectedCenter, center)); // distance from projected center to actual center
-            const isInside = dyno.and(dyno.lessThan(distance, brushRadius), 
-                                      dyno.and(dyno.greaterThan(projectionAmplitude, dyno.dynoFloat(0.0)),
-                                      dyno.lessThan(projectionAmplitude, brushDepth)));
+            // const isInside = dyno.and(dyno.lessThan(distance, brushRadius), 
+            //                           dyno.and(dyno.greaterThan(projectionAmplitude, dyno.dynoFloat(0.0)),
+            //                           dyno.and(dyno.greaterThan(projectionAmplitude, brushDepth),
+            //                           dyno.lessThan(projectionAmplitude, brushFarDepth))));
+            var isInside = dyno.and(dyno.lessThan(distance, brushRadius), 
+                          dyno.and(dyno.greaterThan(projectionAmplitude, dyno.dynoFloat(0.0)),
+                          dyno.greaterThan(projectionAmplitude, brushDepth)));
+            var isInside = dyno.and(isInside, dyno.lessThan(projectionAmplitude, brushDepthFar));
             
             // Paint/erase mode: change RGB or alpha values for splats inside brush
             const luminanceOld = dyno.div(dyno.dot(rgb, flatColor), dyno.dynoFloat(3.0));
@@ -166,6 +173,7 @@
       undoEnabled,
       brushRadius,
       brushDepth,
+      brushDepthFar,
       brushOrigin,
       brushDirection,
       brushColor,
@@ -183,6 +191,7 @@
         undoEnabled,
         brushRadius, 
         brushDepth,
+        brushDepthFar,
         brushOrigin, 
         brushDirection, 
         brushColor,
@@ -258,6 +267,7 @@
         PARAMETERS.undoEnabled,
         PARAMETERS.brushRadius, 
         PARAMETERS.brushDepth,
+        PARAMETERS.brushDepthFar,
         PARAMETERS.brushOrigin, 
         PARAMETERS.brushDirection, 
         PARAMETERS.brushColor,
@@ -285,6 +295,7 @@
         PARAMETERS.undoEnabled,
         PARAMETERS.brushRadius, 
         PARAMETERS.brushDepth,
+        PARAMETERS.brushDepthFar,
         PARAMETERS.brushOrigin, 
         PARAMETERS.brushDirection, 
         PARAMETERS.brushColor,
@@ -294,7 +305,7 @@
     }
 
     // await loadSplatFromFile(await getAssetFileURL(assetID));
-    await loadSplatFromFile("static/dancing.compressed.ply");
+    await loadSplatFromFile("./asset/dancing.compressed.ply");
 
     const raycaster = new THREE.Raycaster();
     let isDragging = false;
@@ -394,6 +405,7 @@
     instructionsFolder.open();
     const brushRadiusController = gui.add(PARAMETERS.brushRadius, "value", MIN_BRUSH_RADIUS, MAX_BRUSH_RADIUS, 0.01).name("Brush Radius");
     const brushDepthController = gui.add(PARAMETERS.brushDepth, "value", MIN_BRUSH_DEPTH, MAX_BRUSH_DEPTH, 0.1).name("Brush Depth");
+    const brushDepthFarController = gui.add(PARAMETERS.brushDepthFar, "value", MIN_BRUSH_DEPTH, MAX_BRUSH_DEPTH, 1).name("Brush Depth Far");
     gui.addColor(PARAMETERS, "brushColorHex").name("Brush Color").onChange((value) => {
       PARAMETERS.brushColor.value = new THREE.Color(value).convertLinearToSRGB();
       console.log(PARAMETERS.brushColor.value);
@@ -404,6 +416,147 @@
       filename: currentFileName,
       maxSh: 0,  // Painted splats don't preserve SH data
       fractionalBits: 12,
+clear: async () => {
+  if (!currentSplatMesh) {
+    alert("No splat mesh loaded.");
+    return;
+  }
+
+  // 确保 current mesh 有 baked RGBA（包含你刷子改动后的）
+  if (!currentSplatMesh.splatRgba) {
+    currentSplatMesh.splatRgba = spark.getRgba({
+      generator: currentSplatMesh,
+      rgba: currentSplatMesh.splatRgba,
+    });
+    currentSplatMesh.updateGenerator();
+  }
+
+  // 读回“编辑后”的 RGBA（uint8）
+  const paintedBytes = await spark.readRgba({
+    generator: currentSplatMesh,
+    rgba: currentSplatMesh.splatRgba,
+  });
+
+  const ogSplats = currentSplatMesh.packedSplats;
+  const totalSplats = ogSplats.numSplats;
+
+  var oldSplatMeshOriginalRGBA = new RgbaArray();
+  oldSplatMeshOriginalRGBA.fromPackedSplats({
+    packedSplats: currentSplatMesh.packedSplats,
+    base: 0,
+    count: currentSplatMesh.packedSplats.numSplats,
+    renderer: renderer,
+  });
+
+  // 容忍一点误差（避免 0/1 这种 tiny 差别误判成 “画过”）
+  const TOL = 1;
+  const approxEq = (a, b) => Math.abs(a - b) <= TOL;
+
+  // 重建一份 packedSplats（数量不变，不删除）
+  const newPackedSplats = new PackedSplats({
+    maxSplats: totalSplats,
+    splatEncoding: ogSplats.splatEncoding,
+  });
+
+  let selectedCount = 0; // 画过的数量
+  let hiddenCount = 0;   // 没画到隐藏的数量
+  let erasedCount = 0;   // 画过但 alpha=0 的（被擦掉）
+
+  for (let i = 0; i < totalSplats; i++) {
+    const rgbaOffset = i * 4;
+    const pr = paintedBytes[rgbaOffset + 0];
+    const pg = paintedBytes[rgbaOffset + 1];
+    const pb = paintedBytes[rgbaOffset + 2];
+    const pa = paintedBytes[rgbaOffset + 3];
+
+    // 原始 splat
+    const unpacked = unpackSplat(
+      ogSplats.packedArray,
+      i,
+      ogSplats.splatEncoding
+    );
+
+    // 原始 RGBA（来自 packedSplats）
+    const or = Math.round(unpacked.color.r * 255);
+    const og = Math.round(unpacked.color.g * 255);
+    const ob = Math.round(unpacked.color.b * 255);
+    const oa = Math.round(unpacked.opacity * 255);
+
+    // 判断是否“画过/改动过”
+    const unchanged =
+      approxEq(pr, or) &&
+      approxEq(pg, og) &&
+      approxEq(pb, ob) &&
+      approxEq(pa, oa);
+
+    if (unchanged) {
+      // ✅ 没画到：隐藏（opacity=0）
+      unpacked.opacity = 0.0;
+      hiddenCount++;
+    } else {
+      // ✅ 画到：恢复原始颜色
+      unpacked.color.r = or / 255;
+      unpacked.color.g = og / 255;
+      unpacked.color.b = ob / 255;
+
+      // ✅ opacity 逻辑：
+      // - 如果你擦掉了(pa==0) -> 仍然隐藏
+      // - 否则恢复原始 opacity（而不是用你 paint 后的 alpha）
+      if (pa === 0) {
+        unpacked.opacity = 0.0;
+        erasedCount++;
+      } else {
+        unpacked.opacity = oa / 255;
+        selectedCount++;
+      }
+    }
+
+    newPackedSplats.pushSplat(
+      unpacked.center,
+      unpacked.scales,
+      unpacked.quaternion,
+      unpacked.opacity,
+      unpacked.color
+    );
+  }
+
+  console.log(
+    `[test] total=${totalSplats}, selected=${selectedCount}, hidden=${hiddenCount}, erased=${erasedCount}`
+  );
+
+  // 替换 packedSplats
+  currentSplatMesh.packedSplats = newPackedSplats;
+
+  // 清掉旧 baked rgba，强制重新从 packedSplats 生成
+  currentSplatMesh.splatRgba = null;
+  currentSplatMesh.updateGenerator();
+
+  // 更新 undo 对应的 original（否则 undo 会错位）
+  currentSplatMeshOriginalRGBA = new RgbaArray();
+  currentSplatMeshOriginalRGBA.fromPackedSplats({
+    packedSplats: currentSplatMesh.packedSplats,
+    base: 0,
+    count: currentSplatMesh.packedSplats.numSplats,
+    renderer: renderer,
+  });
+
+  currentSplatMesh.worldModifier = brushDyno(
+    PARAMETERS.brushEnabled,
+    PARAMETERS.eraseEnabled,
+    PARAMETERS.undoEnabled,
+    PARAMETERS.brushRadius,
+    PARAMETERS.brushDepth,
+    PARAMETERS.brushDepthFar,
+    PARAMETERS.brushOrigin,
+    PARAMETERS.brushDirection,
+    PARAMETERS.brushColor,
+    oldSplatMeshOriginalRGBA.dyno
+  );
+  currentSplatMesh.updateGenerator();
+
+  alert(`Done! selected=${selectedCount}, hidden=${hiddenCount}, erased=${erasedCount}`);
+},
+
       loadFile: () => {
         // Create file input element
         const input = document.createElement('input');
@@ -560,8 +713,8 @@
     const ioFolder = gui.addFolder("I/O");
     ioFolder.add(ioOptions, "loadFile").name("Load Splats (SPZ/PLY)");
     ioFolder.add(ioOptions, "saveToSpz").name("Save Splats (SPZ)");
+    ioFolder.add(ioOptions, "clear").name("clear")
     ioFolder.open();
-
 
         // Keyboard controls
     window.addEventListener('keydown', (event) => {
