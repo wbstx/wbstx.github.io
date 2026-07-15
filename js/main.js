@@ -11,6 +11,46 @@ if (!!$.prototype.justifiedGallery) {
 }
 
 $(document).ready(function() {
+  const animatedPreviews = document.querySelectorAll('img[data-animated-src]');
+
+  function loadAnimation(img) {
+    if (img.dataset.animationLoading === 'true') return;
+
+    img.dataset.animationLoading = 'true';
+    const animatedImage = new Image();
+    animatedImage.decoding = 'async';
+    animatedImage.fetchPriority = 'low';
+
+    animatedImage.onload = function() {
+      img.src = animatedImage.src;
+      img.removeAttribute('data-animated-src');
+      delete img.dataset.animationLoading;
+    };
+
+    animatedImage.onerror = function() {
+      delete img.dataset.animationLoading;
+    };
+
+    animatedImage.src = img.dataset.animatedSrc;
+  }
+
+  if ('IntersectionObserver' in window) {
+    const animationObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (!entry.isIntersecting) return;
+
+        loadAnimation(entry.target);
+        animationObserver.unobserve(entry.target);
+      });
+    }, { rootMargin: '200px 0px' });
+
+    animatedPreviews.forEach(function(img) {
+      animationObserver.observe(img);
+    });
+  } else {
+    animatedPreviews.forEach(loadAnimation);
+  }
+
   /* Store the element in el */
   let els = document.getElementsByClassName('paperimage')
 
