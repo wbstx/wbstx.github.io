@@ -142,6 +142,51 @@ body {
   box-shadow: 0 0 0 4px rgba(255, 129, 122, 0.14);
 }
 
+.fps-meter {
+  position: absolute;
+  z-index: 4;
+  top: 78px;
+  left: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 104px;
+  padding: 10px 12px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  background: rgba(12, 14, 18, 0.82);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px);
+  pointer-events: none;
+}
+
+.fps-meter output {
+  min-width: 2ch;
+  color: #8be4ad;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+}
+
+.fps-meter span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.fps-meter[data-quality="medium"] output {
+  color: var(--accent);
+}
+
+.fps-meter[data-quality="low"] output {
+  color: #ff817a;
+}
+
 .control-panel {
   position: absolute;
   z-index: 5;

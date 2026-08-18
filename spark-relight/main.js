@@ -295,6 +295,8 @@ function resolveVisibilityVariant(sceneConfig, requestedId) {
 }
 
 const canvas = document.getElementById("canvas");
+const fpsMeter = document.getElementById("fps-meter");
+const fpsValue = document.getElementById("fps-value");
 const loadingLayer = document.getElementById("loading-layer");
 const loadingSpinner = loadingLayer.querySelector(".loader");
 const loadingDetail = document.getElementById("loading-detail");
@@ -431,6 +433,9 @@ const modelCenter = new THREE.Vector3();
 let modelRadius = 1;
 let autoLight = false;
 let lastFrameTime = 0;
+let fpsWindowStartedAt = performance.now();
+let fpsWindowFrames = 0;
+let smoothedFps;
 let lightingUpdatePending = false;
 let paintEnabled = false;
 let paintDragging = false;
@@ -2594,13 +2599,44 @@ function initialize() {
   loadingLayer.classList.add("hidden");
 }
 
+function resetFpsCounter(time = performance.now()) {
+  fpsWindowStartedAt = time;
+  fpsWindowFrames = 0;
+  smoothedFps = undefined;
+}
+
+function updateFpsCounter(time) {
+  if (document.hidden) return;
+  fpsWindowFrames += 1;
+  const elapsed = time - fpsWindowStartedAt;
+  if (elapsed < 500) return;
+
+  const sampledFps = (fpsWindowFrames * 1000) / elapsed;
+  smoothedFps =
+    smoothedFps === undefined
+      ? sampledFps
+      : smoothedFps * 0.55 + sampledFps * 0.45;
+  const roundedFps = Math.round(smoothedFps);
+  fpsValue.textContent = String(roundedFps);
+  fpsMeter.dataset.quality =
+    roundedFps < 30 ? "low" : roundedFps < 50 ? "medium" : "high";
+  fpsMeter.title = `${sampledFps.toFixed(1)} frames per second`;
+  fpsWindowStartedAt = time;
+  fpsWindowFrames = 0;
+}
+
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) resetFpsCounter();
+});
+
 renderer.setAnimationLoop((time) => {
+  updateFpsCounter(time);
   const deltaSeconds = Math.min((time - lastFrameTime) / 1000, 0.1);
   lastFrameTime = time;
   if (autoLight && lighting) {
