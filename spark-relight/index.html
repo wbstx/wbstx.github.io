@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Spark • Relightable Visibility</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="viewer-shell">
+      <canvas
+        id="canvas"
+        aria-label="Interactive relightable Gaussian splat viewport"
+      ></canvas>
+
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <strong>RVIS Lab</strong>
+            <span id="scene-subtitle">Loading scene catalog…</span>
+          </div>
+        </div>
+        <div class="asset-status" id="asset-status" role="status">
+          <span class="status-dot"></span>
+          <span id="status-text">Loading scene</span>
+        </div>
+      </header>
+
+      <aside class="control-panel" aria-label="Relighting controls">
+        <section class="control-section">
+          <div class="section-heading">
+            <span>Scenes</span>
+            <output id="scene-total">6 available</output>
+          </div>
+          <div
+            class="scene-list"
+            id="scene-list"
+            role="listbox"
+            aria-label="Scenes with baked RVIS"
+          ></div>
+        </section>
+
+        <section class="control-section" id="visibility-variant-section" hidden>
+          <div class="section-heading">
+            <span>Visibility bake</span>
+            <output id="visibility-variant-value">Smooth</output>
+          </div>
+          <div
+            class="segmented-control"
+            id="visibility-variant-control"
+            role="tablist"
+            aria-label="Visibility bake algorithm"
+          ></div>
+          <p class="mode-description" id="visibility-variant-description"></p>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span>View</span>
+            <output id="mode-value">Shadowed</output>
+          </div>
+          <div
+            class="segmented-control"
+            id="mode-control"
+            role="group"
+            aria-label="Display mode"
+          >
+            <button type="button" data-mode="0">Original</button>
+            <button type="button" data-mode="1">Visibility</button>
+            <button type="button" data-mode="2" aria-pressed="true">
+              Shadowed
+            </button>
+            <button type="button" data-mode="3">Relit</button>
+          </div>
+          <p class="mode-description" id="mode-description">
+            Baked color multiplied by the SH visibility field.
+          </p>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span>Light</span>
+            <button
+              class="text-button"
+              id="auto-light"
+              type="button"
+              aria-pressed="false"
+            >
+              Auto orbit
+            </button>
+          </div>
+          <div
+            class="segmented-control three-up"
+            id="light-type"
+            role="group"
+            aria-label="Light type"
+          >
+            <button type="button" data-light-type="0" aria-pressed="true">
+              Directional
+            </button>
+            <button type="button" data-light-type="1">Point · drag</button>
+            <button type="button" data-light-type="2">HDRI</button>
+          </div>
+
+          <div class="hdri-panel hdri-only" hidden>
+            <div
+              class="hdri-preset-list"
+              id="hdri-preset-list"
+              role="listbox"
+              aria-label="Free HDRI presets"
+            ></div>
+            <label class="hdri-import-button" for="hdri-file">
+              <span>Import local HDRI</span>
+              <small>.hdr or .exr</small>
+              <input
+                id="hdri-file"
+                type="file"
+                accept=".hdr,.exr,image/vnd.radiance"
+              />
+            </label>
+            <label class="range-control" for="hdri-rotation">
+              <span>
+                Rotation <output id="hdri-rotation-value">0°</output>
+              </span>
+              <input
+                id="hdri-rotation"
+                type="range"
+                min="-180"
+                max="180"
+                step="1"
+                value="0"
+              />
+            </label>
+            <label class="range-control" for="hdri-intensity">
+              <span>
+                Intensity <output id="hdri-intensity-value">1.00</output>
+              </span>
+              <input
+                id="hdri-intensity"
+                type="range"
+                min="0"
+                max="3"
+                step="0.05"
+                value="1"
+              />
+            </label>
+            <label class="toggle-control" for="hdri-background">
+              <span>Show HDRI background</span>
+              <input id="hdri-background" type="checkbox" checked />
+            </label>
+            <p class="hdri-status" id="hdri-status">
+              Choose a CC0 preset or import a local HDR/EXR file.
+            </p>
+            <a
+              class="hdri-credit"
+              id="hdri-credit"
+              href="https://polyhaven.com/hdris"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC0 presets from Poly Haven ↗
+            </a>
+          </div>
+
+          <div class="point-light-manager point-only" hidden>
+            <div class="point-light-toolbar">
+              <output id="point-light-count">1 / 4 lights</output>
+              <button
+                class="add-light-button"
+                id="add-point-light"
+                type="button"
+              >
+                <span aria-hidden="true">+</span> Add point light
+              </button>
+            </div>
+            <div
+              class="point-light-list"
+              id="point-light-list"
+              role="listbox"
+              aria-label="Point lights"
+            ></div>
+            <p class="point-light-help">
+              Select a light, then drag its gizmo or use the controls below.
+            </p>
+          </div>
+
+          <fieldset
+            class="light-channel selected-light-editor local-light-only"
+            id="light-editor"
+          >
+            <legend>
+              <span
+                class="channel-dot direct-dot"
+                id="direct-color-dot"
+                aria-hidden="true"
+              ></span>
+              <span id="direct-light-label">Directional light</span>
+            </legend>
+            <label class="range-control" for="azimuth">
+              <span>Azimuth <output id="azimuth-value">35°</output></span>
+              <input
+                id="azimuth"
+                type="range"
+                min="-180"
+                max="180"
+                step="1"
+                value="35"
+              />
+            </label>
+            <label class="range-control" for="elevation">
+              <span>Elevation <output id="elevation-value">48°</output></span>
+              <input
+                id="elevation"
+                type="range"
+                min="-80"
+                max="80"
+                step="1"
+                value="48"
+              />
+            </label>
+            <label class="range-control point-only" for="distance" hidden>
+              <span>Distance <output id="distance-value">1.2×</output></span>
+              <input
+                id="distance"
+                type="range"
+                min="0.25"
+                max="2.5"
+                step="0.05"
+                value="1.2"
+              />
+            </label>
+            <label class="range-control" for="intensity">
+              <span>Intensity <output id="intensity-value">1.00</output></span>
+              <input
+                id="intensity"
+                type="range"
+                min="0"
+                max="3"
+                step="0.05"
+                value="1"
+              />
+            </label>
+            <label class="color-control" for="light-color">
+              <span>Color</span>
+              <input id="light-color" type="color" value="#ffe8c7" />
+            </label>
+          </fieldset>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading"><span>Response</span></div>
+          <label class="range-control" for="shadow-strength">
+            <span>Shadow strength <output id="shadow-value">100%</output></span>
+            <input
+              id="shadow-strength"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+            />
+          </label>
+          <fieldset class="light-channel">
+            <legend>
+              <span class="channel-dot ambient-dot" aria-hidden="true"></span>
+              Ambient light
+            </legend>
+            <label class="range-control" for="ambient">
+              <span>Intensity <output id="ambient-value">15%</output></span>
+              <input
+                id="ambient"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.15"
+              />
+            </label>
+            <label class="color-control" for="ambient-color">
+              <span>Color</span>
+              <input id="ambient-color" type="color" value="#ffffff" />
+            </label>
+          </fieldset>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span>Ground receiver</span>
+            <label class="switch-control" for="ground-plane-toggle">
+              <input id="ground-plane-toggle" type="checkbox" />
+              <span aria-hidden="true"></span>
+              <small>Off</small>
+            </label>
+          </div>
+          <div class="ground-shadow-controls" id="ground-shadow-controls" hidden>
+            <label class="color-control" for="ground-plane-color">
+              <span>Plane color</span>
+              <input id="ground-plane-color" type="color" value="#b8b7b2" />
+            </label>
+            <label class="range-control" for="ground-shadow-strength">
+              <span>
+                Shadow strength
+                <output id="ground-shadow-strength-value">42%</output>
+              </span>
+              <input
+                id="ground-shadow-strength"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.42"
+              />
+            </label>
+            <label class="range-control" for="ground-shadow-softness">
+              <span>
+                Softness
+                <output id="ground-shadow-softness-value">3.5%</output>
+              </span>
+              <input
+                id="ground-shadow-softness"
+                type="range"
+                min="0"
+                max="0.1"
+                step="0.005"
+                value="0.035"
+              />
+            </label>
+            <p class="ground-shadow-status" id="ground-shadow-status">
+              Enable to build a sampled Gaussian visibility receiver.
+            </p>
+          </div>
+        </section>
+
+        <section class="control-section paint-section">
+          <div class="section-heading">
+            <span>Surface paint</span>
+            <button
+              class="text-button"
+              id="paint-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              View
+            </button>
+          </div>
+          <div
+            class="segmented-control three-up"
+            id="paint-tool"
+            role="group"
+            aria-label="Surface interaction tool"
+          >
+            <button type="button" data-paint-tool="1">Brush · B</button>
+            <button type="button" data-paint-tool="2">Eraser · X</button>
+            <button type="button" data-paint-tool="0" aria-pressed="true">
+              View · V
+            </button>
+          </div>
+          <div
+            class="segmented-control two-up"
+            id="paint-mode"
+            role="group"
+            aria-label="Surface paint target"
+          >
+            <button type="button" data-paint-mode="0" aria-pressed="true">
+              Color
+            </button>
+            <button type="button" data-paint-mode="1">Material</button>
+          </div>
+          <p class="mode-description" id="paint-description">
+            Paints base albedo before lighting. Active filters: depth, normal,
+            visibility.
+          </p>
+          <div class="paint-filter-controls" aria-label="Surface paint filters">
+            <div class="toggle-control">
+              <span>Thickness filter</span>
+              <label
+                class="switch-control"
+                for="paint-thickness-filter-toggle"
+              >
+                <input
+                  id="paint-thickness-filter-toggle"
+                  type="checkbox"
+                  checked
+                />
+                <span aria-hidden="true"></span>
+                <small id="paint-thickness-filter-state">On</small>
+              </label>
+            </div>
+            <div class="toggle-control">
+              <span>Normal filter</span>
+              <label class="switch-control" for="paint-normal-filter-toggle">
+                <input
+                  id="paint-normal-filter-toggle"
+                  type="checkbox"
+                  checked
+                />
+                <span aria-hidden="true"></span>
+                <small id="paint-normal-filter-state">On</small>
+              </label>
+            </div>
+            <div class="toggle-control">
+              <span>Visibility filter</span>
+              <label
+                class="switch-control"
+                for="paint-visibility-filter-toggle"
+              >
+                <input
+                  id="paint-visibility-filter-toggle"
+                  type="checkbox"
+                  checked
+                />
+                <span aria-hidden="true"></span>
+                <small id="paint-visibility-filter-state">On</small>
+              </label>
+            </div>
+          </div>
+          <label class="color-control color-paint-only" for="paint-color">
+            <span>Color</span>
+            <input id="paint-color" type="color" value="#e84a5f" />
+          </label>
+          <label
+            class="range-control material-paint-only"
+            for="brush-roughness"
+            hidden
+          >
+            <span>
+              Roughness <output id="brush-roughness-value">30%</output>
+            </span>
+            <input
+              id="brush-roughness"
+              type="range"
+              min="0.045"
+              max="1"
+              step="0.005"
+              value="0.3"
+            />
+          </label>
+          <label
+            class="range-control material-paint-only"
+            for="brush-specular"
+            hidden
+          >
+            <span>
+              Specular <output id="brush-specular-value">100%</output>
+            </span>
+            <input
+              id="brush-specular"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+            />
+          </label>
+          <label class="range-control" for="brush-radius">
+            <span>Radius <output id="brush-radius-value">3.0%</output></span>
+            <input
+              id="brush-radius"
+              type="range"
+              min="0.005"
+              max="0.15"
+              step="0.005"
+              value="0.03"
+            />
+          </label>
+          <label
+            class="range-control paint-thickness-filter-only"
+            for="brush-thickness"
+          >
+            <span>
+              Thickness <output id="brush-thickness-value">25%</output>
+            </span>
+            <input
+              id="brush-thickness"
+              type="range"
+              min="0.05"
+              max="0.75"
+              step="0.05"
+              value="0.25"
+            />
+          </label>
+          <label class="range-control" for="brush-opacity">
+            <span>Flow <output id="brush-opacity-value">65%</output></span>
+            <input
+              id="brush-opacity"
+              type="range"
+              min="0.05"
+              max="1"
+              step="0.05"
+              value="0.65"
+            />
+          </label>
+          <label
+            class="range-control paint-normal-filter-only"
+            for="brush-normal-angle"
+          >
+            <span>
+              Normal angle <output id="brush-normal-angle-value">60°</output>
+            </span>
+            <input
+              id="brush-normal-angle"
+              type="range"
+              min="10"
+              max="90"
+              step="5"
+              value="60"
+            />
+          </label>
+          <label
+            class="range-control paint-visibility-filter-only"
+            for="brush-visibility"
+          >
+            <span>
+              Min visibility <output id="brush-visibility-value">25%</output>
+            </span>
+            <input
+              id="brush-visibility"
+              type="range"
+              min="0"
+              max="0.8"
+              step="0.05"
+              value="0.25"
+            />
+          </label>
+          <p class="paint-help" id="paint-help">
+            Press B to paint, X to erase, or V to adjust the view.
+          </p>
+        </section>
+
+        <footer class="panel-footer">
+          <span id="splat-count">— splats</span>
+          <span>SH3 · 32 dirs</span>
+        </footer>
+      </aside>
+
+      <div class="viewport-hint">
+        B brush · X eraser · V view · WASD/QE move · Arrows look · 1–4 mode
+      </div>
+
+      <div class="brush-cursor" id="brush-cursor" aria-hidden="true"></div>
+
+      <div class="loading-layer" id="loading-layer">
+        <div class="loading-card">
+          <span class="loader" aria-hidden="true"></span>
+          <div>
+            <strong>Preparing visibility field</strong>
+            <span id="loading-detail">Loading SOG and RVIS…</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+          "@sparkjsdev/spark": "./spark.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
