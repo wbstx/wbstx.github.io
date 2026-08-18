@@ -1840,25 +1840,27 @@ function createLocalSceneConfig(sogFile, rvisFile) {
 function fitLocalSceneConfig(sceneConfig, mesh) {
   const bounds = mesh.getBoundingBox();
   if (bounds.isEmpty()) throw new Error("The local SOG contains no splats.");
-  const center = bounds.getCenter(new THREE.Vector3());
+  const localCenter = bounds.getCenter(new THREE.Vector3());
   const size = bounds.getSize(new THREE.Vector3());
   if (
-    ![center.x, center.y, center.z, size.x, size.y, size.z].every(
-      Number.isFinite,
-    )
+    ![
+      localCenter.x,
+      localCenter.y,
+      localCenter.z,
+      size.x,
+      size.y,
+      size.z,
+    ].every(Number.isFinite)
   ) {
     throw new Error("The local SOG has invalid bounds.");
   }
-  center.applyQuaternion(mesh.quaternion);
+  const worldCenter = localCenter.clone().applyQuaternion(mesh.quaternion);
   const radius = Math.max(size.length() * 0.5, 0.001);
+  mesh.position.copy(worldCenter).multiplyScalar(-1);
   sceneConfig.radius = radius;
-  sceneConfig.target = center.toArray();
-  sceneConfig.lightCenter = center.toArray();
-  sceneConfig.position = [
-    center.x + radius * 0.35,
-    center.y + radius * 0.18,
-    center.z + radius * 2.4,
-  ];
+  sceneConfig.target = [0, 0, 0];
+  sceneConfig.lightCenter = localCenter.toArray();
+  sceneConfig.position = [radius * 0.35, radius * 0.18, radius * 2.4];
 }
 
 function updateSceneListState(selectedId, disabled) {
