@@ -15,6 +15,7 @@ import {
   SplatMesh,
   analyzeRvisEnvironment,
   loadRvis,
+  parseRvis,
 } from "@sparkjsdev/spark";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -300,6 +301,12 @@ const loadingDetail = document.getElementById("loading-detail");
 const sceneList = document.getElementById("scene-list");
 const sceneSubtitle = document.getElementById("scene-subtitle");
 const sceneTotal = document.getElementById("scene-total");
+const localSogInput = document.getElementById("local-sog-file");
+const localRvisInput = document.getElementById("local-rvis-file");
+const localSogName = document.getElementById("local-sog-name");
+const localRvisName = document.getElementById("local-rvis-name");
+const loadLocalSceneButton = document.getElementById("load-local-scene");
+const localImportStatus = document.getElementById("local-import-status");
 const visibilityVariantSection = document.getElementById(
   "visibility-variant-section",
 );
@@ -414,6 +421,10 @@ let activeVisibilityVariant;
 let sceneLoadToken = 0;
 let visibilityLoadToken = 0;
 let groundShadowLoadToken = 0;
+let selectedLocalSogFile;
+let selectedLocalRvisFile;
+let sceneLoading = false;
+let localImportError;
 let currentMode = RvisDisplayMode.SHADOWED;
 let currentLightType = RvisLightType.DIRECTIONAL;
 const modelCenter = new THREE.Vector3();
@@ -1736,6 +1747,115 @@ function populateSceneList() {
   sceneTotal.value = `${SCENES.length} available`;
 }
 
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unit = units[0];
+  for (let index = 1; index < units.length && value >= 1024; index += 1) {
+    value /= 1024;
+    unit = units[index];
+  }
+  return `${value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${unit}`;
+}
+
+function localFileLabel(file, fallback) {
+  return file ? `${file.name} · ${formatFileSize(file.size)}` : fallback;
+}
+
+function updateLocalImportControls() {
+  localSogName.textContent = localFileLabel(
+    selectedLocalSogFile,
+    "Choose .sog",
+  );
+  localRvisName.textContent = localFileLabel(
+    selectedLocalRvisFile,
+    "Choose .rvis",
+  );
+  loadLocalSceneButton.disabled =
+    sceneLoading || !selectedLocalSogFile || !selectedLocalRvisFile;
+  if (localImportError) {
+    localImportStatus.classList.add("error");
+    localImportStatus.textContent = localImportError;
+    return;
+  }
+  localImportStatus.classList.remove("error");
+  if (sceneLoading) {
+    localImportStatus.textContent = "A scene is currently loading…";
+  } else if (selectedLocalSogFile && selectedLocalRvisFile) {
+    localImportStatus.textContent =
+      "Ready to open · files never leave this browser.";
+  } else if (selectedLocalSogFile || selectedLocalRvisFile) {
+    localImportStatus.textContent = "Choose the matching SOG and RVIS file.";
+  } else {
+    localImportStatus.textContent =
+      "Files stay in this browser and are never uploaded.";
+  }
+}
+
+function selectLocalFile(input, extension, assign) {
+  localImportError = undefined;
+  const [file] = input.files ?? [];
+  if (file && !file.name.toLowerCase().endsWith(extension)) {
+    assign(undefined);
+    input.value = "";
+    localImportError = `Choose a ${extension} file.`;
+    updateLocalImportControls();
+    return;
+  }
+  assign(file);
+  updateLocalImportControls();
+}
+
+function createLocalSceneConfig(sogFile, rvisFile) {
+  const label = sogFile.name.replace(/\.sog$/i, "") || "Local scene";
+  return {
+    id: `local:${label}`,
+    label,
+    detail: `Local · ${formatFileSize(sogFile.size + rvisFile.size)}`,
+    visibilityVariants: [
+      {
+        id: "local",
+        label: "Local RVIS",
+        detail: rvisFile.name,
+        rvis: "",
+      },
+    ],
+    defaultVisibilityVariant: "local",
+    background: 0x0c0e12,
+    position: [0, 0.25, 2.4],
+    target: [0, 0, 0],
+    lightCenter: [0, 0, 0],
+    radius: 1,
+    fov: 60,
+    localFiles: { sog: sogFile, rvis: rvisFile },
+  };
+}
+
+function fitLocalSceneConfig(sceneConfig, mesh) {
+  const bounds = mesh.getBoundingBox();
+  if (bounds.isEmpty()) throw new Error("The local SOG contains no splats.");
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  if (
+    ![center.x, center.y, center.z, size.x, size.y, size.z].every(
+      Number.isFinite,
+    )
+  ) {
+    throw new Error("The local SOG has invalid bounds.");
+  }
+  center.applyQuaternion(mesh.quaternion);
+  const radius = Math.max(size.length() * 0.5, 0.001);
+  sceneConfig.radius = radius;
+  sceneConfig.target = center.toArray();
+  sceneConfig.lightCenter = center.toArray();
+  sceneConfig.position = [
+    center.x + radius * 0.35,
+    center.y + radius * 0.18,
+    center.z + radius * 2.4,
+  ];
+}
+
 function updateSceneListState(selectedId, disabled) {
   for (const button of sceneList.querySelectorAll("[data-scene]")) {
     button.disabled = disabled;
@@ -2111,6 +2231,22 @@ function bindControls() {
     if (!sceneConfig || sceneConfig.id === activeScene?.id) return;
     loadScene(sceneConfig);
   });
+  localSogInput.addEventListener("change", () => {
+    selectLocalFile(localSogInput, ".sog", (file) => {
+      selectedLocalSogFile = file;
+    });
+  });
+  localRvisInput.addEventListener("change", () => {
+    selectLocalFile(localRvisInput, ".rvis", (file) => {
+      selectedLocalRvisFile = file;
+    });
+  });
+  loadLocalSceneButton.addEventListener("click", () => {
+    if (!selectedLocalSogFile || !selectedLocalRvisFile || sceneLoading) return;
+    loadScene(
+      createLocalSceneConfig(selectedLocalSogFile, selectedLocalRvisFile),
+    );
+  });
   visibilityVariantControl.addEventListener("click", (event) => {
     const button = event.target.closest("[data-visibility-variant]");
     if (
@@ -2228,6 +2364,12 @@ function bindControls() {
 
 function updatePageUrl(sceneConfig, visibilityVariant) {
   const pageUrl = new URL(window.location.href);
+  if (sceneConfig.localFiles) {
+    pageUrl.searchParams.delete("scene");
+    pageUrl.searchParams.delete("visibility");
+    window.history.replaceState(null, "", pageUrl);
+    return;
+  }
   pageUrl.searchParams.set("scene", sceneConfig.id);
   if (getVisibilityVariants(sceneConfig).length > 1) {
     pageUrl.searchParams.set("visibility", visibilityVariant.id);
@@ -2322,17 +2464,21 @@ async function loadVisibilityVariant(requestedId) {
 }
 
 async function loadScene(sceneConfig, requestedVisibilityVariant) {
+  const localFiles = sceneConfig.localFiles;
   const visibilityVariant = resolveVisibilityVariant(
     sceneConfig,
     requestedVisibilityVariant,
   );
   const loadToken = ++sceneLoadToken;
+  sceneLoading = true;
+  localImportError = undefined;
+  updateLocalImportControls();
   cameraKeys.clear();
   controls.enabled = false;
   updateSceneListState(sceneConfig.id, true);
   assetStatus.classList.remove("ready", "error");
   statusText.textContent = "Loading scene";
-  sceneSubtitle.textContent = `${sceneConfig.id} · ${visibilityVariant.label}`;
+  sceneSubtitle.textContent = `${localFiles ? sceneConfig.label : sceneConfig.id} · ${visibilityVariant.label}`;
   splatCount.textContent = "— splats";
   loadingSpinner.hidden = false;
   loadingDetail.textContent = `Loading ${sceneConfig.label}…`;
@@ -2342,7 +2488,13 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
   updateVisibilityVariantState(sceneConfig, visibilityVariant.id, true);
 
   const nextSplat = new SplatMesh({
-    url: assetUrl(sceneConfig.sog),
+    ...(localFiles
+      ? {
+          fileName: localFiles.sog.name,
+          stream: localFiles.sog.stream(),
+          streamLength: localFiles.sog.size,
+        }
+      : { url: assetUrl(sceneConfig.sog) }),
     onProgress: (event) => {
       if (loadToken !== sceneLoadToken || !event.lengthComputable) return;
       loadingDetail.textContent = `Loading scene · ${Math.round((event.loaded / event.total) * 100)}%`;
@@ -2352,10 +2504,10 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
   let committed = false;
 
   try {
-    const [rvis] = await Promise.all([
-      loadRvis(assetUrl(visibilityVariant.rvis)),
-      nextSplat.initialized,
-    ]);
+    const rvisPromise = localFiles
+      ? localFiles.rvis.arrayBuffer().then(parseRvis)
+      : loadRvis(assetUrl(visibilityVariant.rvis));
+    const [rvis] = await Promise.all([rvisPromise, nextSplat.initialized]);
     if (loadToken !== sceneLoadToken) {
       nextSplat.dispose();
       return;
@@ -2364,6 +2516,12 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
     // Spark needs the raw SOG rotated into Three.js world space. SuperSplat's
     // saved camera is already expressed in that corrected world space.
     nextSplat.quaternion.set(1, 0, 0, 0);
+    if (nextSplat.numSplats !== rvis.header.splatCount) {
+      throw new Error(
+        `SOG/RVIS splat count mismatch: ${nextSplat.numSplats.toLocaleString()} vs ${rvis.header.splatCount.toLocaleString()}`,
+      );
+    }
+    if (localFiles) fitLocalSceneConfig(sceneConfig, nextSplat);
     nextLighting = new RvisLighting(rvis);
     nextLighting.applyTo(nextSplat);
 
@@ -2399,10 +2557,14 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
     assetStatus.classList.add("error");
     loadingDetail.textContent =
       error instanceof Error ? error.message : String(error);
+    if (localFiles) {
+      localImportError = error instanceof Error ? error.message : String(error);
+    }
     loadingSpinner.hidden = true;
     loadingLayer.classList.add("hidden");
   } finally {
     if (loadToken === sceneLoadToken) {
+      sceneLoading = false;
       controls.enabled = true;
       updateSceneListState(activeScene?.id ?? sceneConfig.id, false);
       updateVisibilityVariantState(
@@ -2410,6 +2572,7 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
         activeVisibilityVariant?.id ?? visibilityVariant.id,
         false,
       );
+      updateLocalImportControls();
     }
   }
 }
@@ -2420,13 +2583,15 @@ function initialize() {
   renderHdriPresets();
   updateSurfacePainterControls();
   bindControls();
-  const pageUrl = new URL(window.location.href);
-  const requestedScene = pageUrl.searchParams.get("scene");
-  const requestedVisibilityVariant = pageUrl.searchParams.get("visibility");
-  loadScene(
-    scenesById.get(requestedScene) ?? SCENES[0],
-    requestedVisibilityVariant,
-  );
+  updateLocalImportControls();
+  visibilityVariantSection.hidden = true;
+  assetStatus.classList.remove("ready", "error");
+  statusText.textContent = "Ready";
+  sceneSubtitle.textContent = "Choose a scene to begin";
+  splatCount.textContent = "— splats";
+  viewportHint.textContent =
+    "Choose an online scene or open a local SOG + RVIS pair";
+  loadingLayer.classList.add("hidden");
 }
 
 window.addEventListener("resize", () => {

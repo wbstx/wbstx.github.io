@@ -19,12 +19,12 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <div>
             <strong>RVIS Lab</strong>
-            <span id="scene-subtitle">Loading scene catalog…</span>
+            <span id="scene-subtitle">Choose a scene to begin</span>
           </div>
         </div>
         <div class="asset-status" id="asset-status" role="status">
           <span class="status-dot"></span>
-          <span id="status-text">Loading scene</span>
+          <span id="status-text">Ready</span>
         </div>
       </header>
 
@@ -40,6 +40,31 @@
             role="listbox"
             aria-label="Scenes with baked RVIS"
           ></div>
+          <div class="local-scene-import">
+            <div class="local-file-grid">
+              <label class="local-file-button" for="local-sog-file">
+                <span>SOG</span>
+                <small id="local-sog-name">Choose .sog</small>
+                <input id="local-sog-file" type="file" accept=".sog" />
+              </label>
+              <label class="local-file-button" for="local-rvis-file">
+                <span>RVIS</span>
+                <small id="local-rvis-name">Choose .rvis</small>
+                <input id="local-rvis-file" type="file" accept=".rvis" />
+              </label>
+            </div>
+            <button
+              class="load-local-button"
+              id="load-local-scene"
+              type="button"
+              disabled
+            >
+              Open local pair
+            </button>
+            <p class="local-import-status" id="local-import-status">
+              Files stay in this browser and are never uploaded.
+            </p>
+          </div>
         </section>
 
         <section class="control-section" id="visibility-variant-section" hidden>
@@ -536,12 +561,12 @@
       </aside>
 
       <div class="viewport-hint">
-        B brush · X eraser · V view · WASD/QE move · Arrows look · 1–4 mode
+        Choose an online scene or open a local SOG + RVIS pair
       </div>
 
       <div class="brush-cursor" id="brush-cursor" aria-hidden="true"></div>
 
-      <div class="loading-layer" id="loading-layer">
+      <div class="loading-layer hidden" id="loading-layer">
         <div class="loading-card">
           <span class="loader" aria-hidden="true"></span>
           <div>

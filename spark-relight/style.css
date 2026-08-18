@@ -568,6 +568,96 @@ body {
   gap: 5px;
 }
 
+.local-scene-import {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.local-file-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.local-file-button {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.local-file-button:hover {
+  border-color: rgba(244, 185, 106, 0.45);
+  background: rgba(244, 185, 106, 0.06);
+}
+
+.local-file-button span {
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.local-file-button small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.local-file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.load-local-button {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(244, 185, 106, 0.38);
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  transition: border-color 140ms ease, background-color 140ms ease, transform
+    120ms var(--ease-out), opacity 140ms ease;
+}
+
+.load-local-button:hover:not(:disabled) {
+  border-color: rgba(244, 185, 106, 0.7);
+  background: rgba(244, 185, 106, 0.18);
+}
+
+.load-local-button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.load-local-button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.local-import-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.local-import-status.error {
+  color: #ff918b;
+}
+
 .scene-option {
   display: flex;
   align-items: center;
