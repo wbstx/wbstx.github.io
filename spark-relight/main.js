@@ -8,6 +8,7 @@ import {
   RvisGroundShadowLightType,
   RvisLightType,
   RvisLighting,
+  RvisSurfaceColorMode,
   RvisSurfacePaintMode,
   RvisSurfacePaintTool,
   RvisSurfacePainter,
@@ -365,6 +366,7 @@ const paintHelp = document.getElementById("paint-help");
 const brushCursor = document.getElementById("brush-cursor");
 const paintToolControl = document.getElementById("paint-tool");
 const paintModeControl = document.getElementById("paint-mode");
+const paintColorModeControl = document.getElementById("paint-color-mode");
 const paintDescription = document.getElementById("paint-description");
 const paintFilters = {
   thickness: {
@@ -443,6 +445,7 @@ let paintPointerId = null;
 let lastPaintClientX = Number.NaN;
 let lastPaintClientY = Number.NaN;
 let currentPaintMode = RvisSurfacePaintMode.COLOR;
+let currentPaintColorMode = RvisSurfaceColorMode.TINT;
 const PaintInteractionTool = Object.freeze({ VIEW: 0, BRUSH: 1, ERASER: 2 });
 let currentPaintTool = PaintInteractionTool.VIEW;
 let lastPaintTool = PaintInteractionTool.BRUSH;
@@ -564,9 +567,15 @@ const modeDescriptions = [
   "Visibility, shortest-axis normals, and painted GGX material response.",
 ];
 const paintDescriptions = [
-  "Paints base albedo before lighting.",
+  "Paints a non-destructive per-Gaussian color layer before lighting.",
   "Adds a per-Gaussian clearcoat with painted roughness and interactive highlights.",
 ];
+const colorPaintDescriptions = {
+  [RvisSurfaceColorMode.SOLID]:
+    "Applies the selected color uniformly for graphic, flat coverage.",
+  [RvisSurfaceColorMode.TINT]:
+    "Colorizes the surface while preserving reconstructed luminance and SH detail.",
+};
 
 function sphericalDirection(azimuthDegrees, elevationDegrees) {
   const azimuth = THREE.MathUtils.degToRad(azimuthDegrees);
@@ -1119,7 +1128,11 @@ function updatePaintDescription() {
     activeFilters.length > 0
       ? `Active filters: ${activeFilters.map(({ label }) => label).join(", ")}.`
       : "All candidate filters are off; only brush radius and flow remain, so hidden and back splats can be painted.";
-  paintDescription.textContent = `${paintDescriptions[currentPaintMode]} ${filterDescription}`;
+  const modeDescription =
+    currentPaintMode === RvisSurfacePaintMode.COLOR
+      ? colorPaintDescriptions[currentPaintColorMode]
+      : paintDescriptions[currentPaintMode];
+  paintDescription.textContent = `${modeDescription} ${filterDescription}`;
 }
 
 function updateSurfacePainterControls() {
@@ -1166,6 +1179,7 @@ function updateSurfacePainterControls() {
   surfacePainter.normalFilterEnabled = paintFilters.normal.toggle.checked;
   surfacePainter.visibilityFilterEnabled =
     paintFilters.visibility.toggle.checked;
+  surfacePainter.colorMode = currentPaintColorMode;
   surfacePainter.color.set(inputs.paintColor.value);
   surfacePainter.roughness = Number(inputs.brushRoughness.value);
   surfacePainter.specular = Number(inputs.brushSpecular.value);
@@ -1177,6 +1191,25 @@ function updateSurfacePainterControls() {
   surfacePainter.visibilityThreshold = Number(inputs.brushVisibility.value);
 }
 
+function setPaintColorMode(mode) {
+  const nextMode = Number(mode);
+  if (
+    nextMode !== RvisSurfaceColorMode.SOLID &&
+    nextMode !== RvisSurfaceColorMode.TINT
+  ) {
+    return;
+  }
+  currentPaintColorMode = nextMode;
+  for (const button of paintColorModeControl.querySelectorAll("button")) {
+    button.setAttribute(
+      "aria-pressed",
+      String(Number(button.dataset.paintColorMode) === nextMode),
+    );
+  }
+  if (surfacePainter) surfacePainter.colorMode = nextMode;
+  updatePaintDescription();
+}
+
 function setPaintMode(mode) {
   currentPaintMode = Number(mode);
   const materialMode = currentPaintMode === RvisSurfacePaintMode.MATERIAL;
@@ -1185,6 +1218,9 @@ function setPaintMode(mode) {
       "aria-pressed",
       String(Number(button.dataset.paintMode) === currentPaintMode),
     );
+  }
+  for (const button of paintColorModeControl.querySelectorAll("button")) {
+    button.disabled = materialMode;
   }
   for (const element of document.querySelectorAll(".color-paint-only")) {
     element.hidden = materialMode;
@@ -1370,6 +1406,11 @@ function bindSurfacePainting() {
       setPaintMode(button.dataset.paintMode),
     );
   }
+  for (const button of paintColorModeControl.querySelectorAll("button")) {
+    button.addEventListener("click", () =>
+      setPaintColorMode(button.dataset.paintColorMode),
+    );
+  }
   for (const input of [
     inputs.paintColor,
     inputs.brushRoughness,
@@ -1382,6 +1423,7 @@ function bindSurfacePainting() {
   ]) {
     input.addEventListener("input", updateSurfacePainterControls);
   }
+  setPaintColorMode(currentPaintColorMode);
   setPaintMode(currentPaintMode);
   setPaintTool(PaintInteractionTool.VIEW);
 
@@ -1948,6 +1990,7 @@ function createSurfacePainter() {
     roughness: Number(inputs.brushRoughness.value),
     specular: Number(inputs.brushSpecular.value),
     mode: currentPaintMode,
+    colorMode: currentPaintColorMode,
   });
   updateSurfacePainterControls();
 }

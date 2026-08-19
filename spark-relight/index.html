@@ -398,9 +398,20 @@
             </button>
             <button type="button" data-paint-mode="1">Material</button>
           </div>
+          <div
+            class="segmented-control two-up color-paint-only"
+            id="paint-color-mode"
+            role="group"
+            aria-label="Color application mode"
+          >
+            <button type="button" data-paint-color-mode="1" aria-pressed="true">
+              Tint · detail
+            </button>
+            <button type="button" data-paint-color-mode="0">Solid</button>
+          </div>
           <p class="mode-description" id="paint-description">
-            Paints base albedo before lighting. Active filters: depth, normal,
-            visibility.
+            Colorizes the surface while preserving reconstructed luminance and
+            SH detail. Active filters: depth, normal, visibility.
           </p>
           <div class="paint-filter-controls" aria-label="Surface paint filters">
             <div class="toggle-control">

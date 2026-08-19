@@ -18461,13 +18461,17 @@ var RvisSurfacePaintTool = /* @__PURE__ */ ((RvisSurfacePaintTool2) => {
   RvisSurfacePaintTool2[RvisSurfacePaintTool2["ERASER"] = 1] = "ERASER";
   return RvisSurfacePaintTool2;
 })(RvisSurfacePaintTool || {});
+var RvisSurfaceColorMode = /* @__PURE__ */ ((RvisSurfaceColorMode2) => {
+  RvisSurfaceColorMode2[RvisSurfaceColorMode2["SOLID"] = 0] = "SOLID";
+  RvisSurfaceColorMode2[RvisSurfaceColorMode2["TINT"] = 1] = "TINT";
+  return RvisSurfaceColorMode2;
+})(RvisSurfaceColorMode || {});
 class RvisSurfacePainter {
   constructor(mesh, lighting, options) {
     this.color = new THREE.Color("#e84a5f");
     this.center = new THREE.Vector3();
     this.normal = new THREE.Vector3(0, 0, 1);
     this.cameraPosition = new THREE.Vector3();
-    this.enabledUniform = dynoBool(false);
     this.centerUniform = dynoVec3(this.center);
     this.normalUniform = dynoVec3(this.normal);
     this.cameraPositionUniform = dynoVec3(this.cameraPosition);
@@ -18476,6 +18480,10 @@ class RvisSurfacePainter {
     this.thicknessUniform = dynoFloat(0.025);
     this.opacityUniform = dynoFloat(0.65);
     this.erasingUniform = dynoBool(false);
+    this.colorModeUniform = dynoInt(
+      1
+      /* TINT */
+    );
     this.thicknessFilterEnabledUniform = dynoBool(true);
     this.normalFilterEnabledUniform = dynoBool(true);
     this.visibilityFilterEnabledUniform = dynoBool(true);
@@ -18486,6 +18494,20 @@ class RvisSurfacePainter {
     );
     this.roughnessUniform = dynoFloat(RVIS_DEFAULT_ROUGHNESS);
     this.specularUniform = dynoFloat(RVIS_DEFAULT_SPECULAR);
+    this.paintMapUniform = new DynoUniform({
+      key: "rvisSurfacePaintMap",
+      type: TRgbaArray,
+      value: {
+        texture: RgbaArray.getEmpty(),
+        count: 0
+      },
+      globals: () => [defineRgbaArray],
+      update: (value) => {
+        value.texture = this.paintMap.getTexture();
+        value.count = this.paintMap.count;
+        return value;
+      }
+    });
     this.originalMaterialMapUniform = new DynoUniform({
       key: "rvisOriginalMaterialMap",
       type: TRvisMaterialMap,
@@ -18516,6 +18538,11 @@ class RvisSurfacePainter {
     this.renderer = options.renderer;
     this.originalModifiers = mesh.objectModifiers;
     this.originalMaterialMap = lighting.currentMaterialMap;
+    this.paintMap = new RgbaArray({
+      array: new Uint8Array(mesh.numSplats * 4),
+      count: mesh.numSplats
+    });
+    this.paintReader = this.createPaintReader();
     this.modifier = this.createModifier();
     const defaultRadius = options.radius ?? 0.1;
     this.radius = defaultRadius;
@@ -18532,13 +18559,8 @@ class RvisSurfacePainter {
     this.specular = options.specular ?? 1;
     this.mode = options.mode ?? 0;
     this.tool = options.tool ?? 0;
+    this.colorMode = options.colorMode ?? 1;
     mesh.enableLod = false;
-    mesh.splatRgba = new RgbaArray().fromPackedSplats({
-      packedSplats: mesh.packedSplats,
-      base: 0,
-      count: mesh.packedSplats.numSplats,
-      renderer: this.renderer
-    });
     const modifiers2 = [...mesh.objectModifiers ?? []];
     const lightingIndex = modifiers2.indexOf(lighting.modifier);
     modifiers2.splice(
@@ -18624,6 +18646,15 @@ class RvisSurfacePainter {
     this.paintTool = value;
     this.erasingUniform.value = value === 1;
   }
+  get colorMode() {
+    return this.colorModeUniform.value;
+  }
+  set colorMode(value) {
+    if (value !== 0 && value !== 1) {
+      throw new RangeError(`Unsupported surface color mode: ${value}`);
+    }
+    this.colorModeUniform.value = value;
+  }
   get roughness() {
     return this.roughnessUniform.value;
   }
@@ -18654,50 +18685,29 @@ class RvisSurfacePainter {
     return this.paintMode === 1 ? this.flushMaterial() : this.flushColor();
   }
   dispose() {
-    var _a2, _b2;
+    var _a2;
     this.stampPending = false;
     this.lighting.setMaterialMap(this.originalMaterialMap);
+    this.paintMap.dispose();
     (_a2 = this.materialMap) == null ? void 0 : _a2.dispose();
     this.mesh.objectModifiers = this.originalModifiers;
-    (_b2 = this.mesh.splatRgba) == null ? void 0 : _b2.dispose();
-    this.mesh.splatRgba = null;
     this.mesh.updateGenerator();
   }
   flushColor() {
-    var _a2;
-    const previousMode = this.lighting.mode;
-    const restoreLightingMode = previousMode !== RvisDisplayMode.ORIGINAL;
-    const nextRgba = new RgbaArray();
+    const nextPaintMap = new RgbaArray();
     try {
-      this.enabledUniform.value = true;
-      this.lighting.mode = RvisDisplayMode.ORIGINAL;
-      if (restoreLightingMode) this.mesh.updateVersion();
-      nextRgba.render({
+      nextPaintMap.render({
         renderer: this.renderer,
         count: this.mesh.numSplats,
-        reader: dynoBlock(
-          { index: "int" },
-          { rgba8: "vec4" },
-          ({ index }) => {
-            var _a3;
-            if (!index) throw new Error("Missing splat index");
-            const { gsplat } = ((_a3 = this.mesh.generator) == null ? void 0 : _a3.apply({ index })) ?? {};
-            if (!gsplat) throw new Error("Missing SplatMesh generator");
-            return { rgba8: splitGsplat(gsplat).outputs.rgba };
-          }
-        )
+        reader: this.paintReader
       });
     } catch (error) {
-      nextRgba.dispose();
+      nextPaintMap.dispose();
       throw error;
-    } finally {
-      this.enabledUniform.value = false;
-      this.lighting.mode = previousMode;
-      if (restoreLightingMode) this.mesh.updateVersion();
     }
-    (_a2 = this.mesh.splatRgba) == null ? void 0 : _a2.dispose();
-    this.mesh.splatRgba = nextRgba;
-    this.mesh.updateGenerator();
+    const previousPaintMap = this.paintMap;
+    this.paintMap = nextPaintMap;
+    previousPaintMap.dispose();
     this.mesh.updateVersion();
     return true;
   }
@@ -18719,6 +18729,144 @@ class RvisSurfacePainter {
     previousMaterialMap == null ? void 0 : previousMaterialMap.dispose();
     this.mesh.updateVersion();
     return true;
+  }
+  createPaintReader() {
+    const packedSplats = this.mesh.packedSplats;
+    if (!packedSplats) {
+      throw new Error("RVIS color painting requires PackedSplats");
+    }
+    return dynoBlock({ index: "int" }, { rgba8: "vec4" }, ({ index }) => {
+      if (!index) throw new Error("Missing splat index");
+      const gsplat = packedSplats.fetchSplat({ index });
+      const splatNormal = gsplatNormal(gsplat);
+      const currentPaint = readRgbaArray(this.paintMapUniform, index);
+      const shader = new Dyno({
+        inTypes: {
+          gsplat: Gsplat,
+          splatNormal: "vec3",
+          index: "int",
+          currentPaint: "vec4",
+          erasing: "bool",
+          center: "vec3",
+          brushNormal: "vec3",
+          cameraPosition: "vec3",
+          color: "vec3",
+          radius: "float",
+          thickness: "float",
+          opacity: "float",
+          thicknessFilterEnabled: "bool",
+          normalFilterEnabled: "bool",
+          visibilityFilterEnabled: "bool",
+          visibilityThreshold: "float",
+          visibilityFeather: "float",
+          normalCosine: "float",
+          coefficients: "sampler2DArray",
+          textureWidth: "int"
+        },
+        outTypes: { rgba8: "vec4" },
+        globals: () => [RVIS_GLSL],
+        statements: ({ inputs, outputs }) => unindentLines(`
+              vec4 paint = ${inputs.currentPaint};
+              vec3 brushNormal = normalize(${inputs.brushNormal});
+              vec3 delta = ${inputs.gsplat}.center - ${inputs.center};
+              float signedDepth = dot(delta, brushNormal);
+              float tangentDistance = length(
+                delta - brushNormal * signedDepth
+              );
+              float radialWeight = 1.0 - smoothstep(
+                ${inputs.radius} * 0.72,
+                ${inputs.radius},
+                tangentDistance
+              );
+              float thicknessWeight = 1.0;
+              if (${inputs.thicknessFilterEnabled}) {
+                thicknessWeight = 1.0 - smoothstep(
+                  ${inputs.thickness} * 0.45,
+                  ${inputs.thickness},
+                  abs(signedDepth)
+                );
+              }
+              float normalWeight = 1.0;
+              if (${inputs.normalFilterEnabled}) {
+                float alignment = abs(dot(
+                  normalize(${inputs.splatNormal}),
+                  brushNormal
+                ));
+                normalWeight = smoothstep(
+                  ${inputs.normalCosine},
+                  min(1.0, ${inputs.normalCosine} + 0.2),
+                  alignment
+                );
+              }
+              float visibilityWeight = 1.0;
+              if (${inputs.visibilityFilterEnabled}) {
+                vec3 toCamera = normalize(
+                  ${inputs.cameraPosition} - ${inputs.gsplat}.center
+                );
+                float visibility = evaluateRvisSH(
+                  ${inputs.coefficients},
+                  ${inputs.textureWidth},
+                  ${inputs.index},
+                  toCamera
+                );
+                visibilityWeight = smoothstep(
+                  ${inputs.visibilityThreshold},
+                  min(
+                    1.0,
+                    ${inputs.visibilityThreshold} + ${inputs.visibilityFeather}
+                  ),
+                  visibility
+                );
+              }
+              float weight = clamp(
+                radialWeight
+                  * thicknessWeight
+                  * normalWeight
+                  * visibilityWeight
+                  * ${inputs.opacity},
+                0.0,
+                1.0
+              );
+
+              if (${inputs.erasing}) {
+                paint.a *= 1.0 - weight;
+                if (paint.a < (0.5 / 255.0)) paint = vec4(0.0);
+              } else if (weight > 0.0) {
+                float nextMask = weight + paint.a * (1.0 - weight);
+                vec3 nextPremultiplied =
+                  ${inputs.color} * weight
+                  + paint.rgb * paint.a * (1.0 - weight);
+                paint.rgb = nextPremultiplied / max(nextMask, 0.000001);
+                paint.a = nextMask;
+              }
+              ${outputs.rgba8} = clamp(paint, 0.0, 1.0);
+            `)
+      });
+      return {
+        rgba8: shader.apply({
+          gsplat,
+          splatNormal,
+          index,
+          currentPaint,
+          erasing: this.erasingUniform,
+          center: this.centerUniform,
+          brushNormal: this.normalUniform,
+          cameraPosition: this.cameraPositionUniform,
+          color: this.colorUniform,
+          radius: this.radiusUniform,
+          thickness: this.thicknessUniform,
+          opacity: this.opacityUniform,
+          thicknessFilterEnabled: this.thicknessFilterEnabledUniform,
+          normalFilterEnabled: this.normalFilterEnabledUniform,
+          visibilityFilterEnabled: this.visibilityFilterEnabledUniform,
+          visibilityThreshold: this.visibilityThresholdUniform,
+          visibilityFeather: this.visibilityFeatherUniform,
+          normalCosine: this.normalCosineUniform,
+          coefficients: this.lighting.coefficientsDyno,
+          textureWidth: this.lighting.textureWidthDyno
+        }).rgba8
+      };
+    });
   }
   createMaterialReader() {
     const packedSplats = this.mesh.packedSplats;
@@ -18898,116 +19046,45 @@ class RvisSurfacePainter {
     });
   }
   createModifier() {
-    const packedSplats = this.mesh.packedSplats;
-    if (!packedSplats) {
-      throw new Error("RVIS color painting requires PackedSplats");
-    }
     return dynoBlock(
       { gsplat: Gsplat },
       { gsplat: Gsplat },
       ({ gsplat }) => {
         if (!gsplat) throw new Error("Missing Gsplat input");
-        const normal = gsplatNormal(gsplat);
         const sourceIndex = splitGsplat(gsplat).outputs.index;
-        const sourceColor = splitGsplat(
-          packedSplats.fetchSplat({ index: sourceIndex })
-        ).outputs.rgb;
+        const paint = readRgbaArray(this.paintMapUniform, sourceIndex);
         const shader = new Dyno({
           inTypes: {
             gsplat: Gsplat,
-            splatNormal: "vec3",
-            enabled: "bool",
-            center: "vec3",
-            brushNormal: "vec3",
-            cameraPosition: "vec3",
-            color: "vec3",
-            sourceColor: "vec3",
-            erasing: "bool",
-            radius: "float",
-            thickness: "float",
-            opacity: "float",
-            thicknessFilterEnabled: "bool",
-            normalFilterEnabled: "bool",
-            visibilityFilterEnabled: "bool",
-            visibilityThreshold: "float",
-            visibilityFeather: "float",
-            normalCosine: "float",
-            coefficients: "sampler2DArray",
-            textureWidth: "int"
+            paint: "vec4",
+            colorMode: "int"
           },
           outTypes: { gsplat: Gsplat },
-          globals: () => [RVIS_GLSL],
           statements: ({ inputs, outputs }) => unindentLines(`
               ${outputs.gsplat} = ${inputs.gsplat};
-              if (${inputs.enabled}) {
-                vec3 brushNormal = normalize(${inputs.brushNormal});
-                vec3 delta = ${inputs.gsplat}.center - ${inputs.center};
-                float signedDepth = dot(delta, brushNormal);
-                float tangentDistance = length(
-                  delta - brushNormal * signedDepth
-                );
-                float radialWeight = 1.0 - smoothstep(
-                  ${inputs.radius} * 0.72,
-                  ${inputs.radius},
-                  tangentDistance
-                );
-                float thicknessWeight = 1.0;
-                if (${inputs.thicknessFilterEnabled}) {
-                  thicknessWeight = 1.0 - smoothstep(
-                    ${inputs.thickness} * 0.45,
-                    ${inputs.thickness},
-                    abs(signedDepth)
+              if (${inputs.paint}.a > 0.0) {
+                vec3 targetColor = ${inputs.paint}.rgb;
+                if (${inputs.colorMode} == ${1}) {
+                  const vec3 luminanceWeights =
+                    vec3(0.2126, 0.7152, 0.0722);
+                  float sourceLuminance = dot(
+                    max(${inputs.gsplat}.rgba.rgb, vec3(0.0)),
+                    luminanceWeights
                   );
+                  float paintLuminance = dot(
+                    max(${inputs.paint}.rgb, vec3(0.0)),
+                    luminanceWeights
+                  );
+                  if (paintLuminance > 0.000001) {
+                    targetColor = ${inputs.paint}.rgb
+                      * (sourceLuminance / paintLuminance);
+                  }
+                  targetColor = clamp(targetColor, 0.0, 1.0);
                 }
-                float normalWeight = 1.0;
-                if (${inputs.normalFilterEnabled}) {
-                  float alignment = abs(dot(
-                    normalize(${inputs.splatNormal}),
-                    brushNormal
-                  ));
-                  normalWeight = smoothstep(
-                    ${inputs.normalCosine},
-                    min(1.0, ${inputs.normalCosine} + 0.2),
-                    alignment
-                  );
-                }
-                float visibilityWeight = 1.0;
-                if (${inputs.visibilityFilterEnabled}) {
-                  vec3 toCamera = normalize(
-                    ${inputs.cameraPosition} - ${inputs.gsplat}.center
-                  );
-                  float visibility = evaluateRvisSH(
-                    ${inputs.coefficients},
-                    ${inputs.textureWidth},
-                    ${inputs.gsplat}.index,
-                    toCamera
-                  );
-                  visibilityWeight = smoothstep(
-                    ${inputs.visibilityThreshold},
-                    min(
-                      1.0,
-                      ${inputs.visibilityThreshold}
-                        + ${inputs.visibilityFeather}
-                    ),
-                    visibility
-                  );
-                }
-                float weight = clamp(
-                  radialWeight
-                    * thicknessWeight
-                    * normalWeight
-                    * visibilityWeight
-                    * ${inputs.opacity},
-                  0.0,
-                  1.0
-                );
-                vec3 targetColor = ${inputs.erasing}
-                  ? ${inputs.sourceColor}
-                  : ${inputs.color};
                 ${outputs.gsplat}.rgba.rgb = mix(
                   ${inputs.gsplat}.rgba.rgb,
                   targetColor,
-                  weight
+                  ${inputs.paint}.a
                 );
               }
             `)
@@ -19015,25 +19092,8 @@ class RvisSurfacePainter {
         return {
           gsplat: shader.apply({
             gsplat,
-            splatNormal: normal,
-            enabled: this.enabledUniform,
-            center: this.centerUniform,
-            brushNormal: this.normalUniform,
-            cameraPosition: this.cameraPositionUniform,
-            color: this.colorUniform,
-            sourceColor,
-            erasing: this.erasingUniform,
-            radius: this.radiusUniform,
-            thickness: this.thicknessUniform,
-            opacity: this.opacityUniform,
-            thicknessFilterEnabled: this.thicknessFilterEnabledUniform,
-            normalFilterEnabled: this.normalFilterEnabledUniform,
-            visibilityFilterEnabled: this.visibilityFilterEnabledUniform,
-            visibilityThreshold: this.visibilityThresholdUniform,
-            visibilityFeather: this.visibilityFeatherUniform,
-            normalCosine: this.normalCosineUniform,
-            coefficients: this.lighting.coefficientsDyno,
-            textureWidth: this.lighting.textureWidthDyno
+            paint,
+            colorMode: this.colorModeUniform
           }).gsplat
         };
       }
@@ -21234,6 +21294,7 @@ export {
   RvisLightType,
   RvisLighting,
   RvisPointLight,
+  RvisSurfaceColorMode,
   RvisSurfacePaintMode,
   RvisSurfacePaintTool,
   RvisSurfacePainter,
@@ -21297,3 +21358,4 @@ export {
   unpackSplat,
   utils
 };
+//# sourceMappingURL=spark.module.js.map
