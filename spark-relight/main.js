@@ -605,6 +605,12 @@ let paintDragging = false;
 let paintPointerId = null;
 let lastPaintClientX = Number.NaN;
 let lastPaintClientY = Number.NaN;
+let pendingPaintSample;
+let pendingHoverSample;
+let nextPaintSampleAt = 0;
+let nextHoverSampleAt = 0;
+const paintSampleInterval = coarsePointerMedia.matches ? 1000 / 30 : 1000 / 60;
+const paintHoverInterval = 1000 / 20;
 let currentPaintMode = RvisSurfacePaintMode.COLOR;
 let currentPaintColorMode = RvisSurfaceColorMode.TINT;
 const PaintInteractionTool = Object.freeze({ VIEW: 0, BRUSH: 1, ERASER: 2 });
@@ -1533,6 +1539,8 @@ function setPaintEnabled(enabled) {
     const capturedPointerId = paintPointerId;
     paintDragging = false;
     paintPointerId = null;
+    pendingPaintSample = undefined;
+    pendingHoverSample = undefined;
     if (
       capturedPointerId !== null &&
       canvas.hasPointerCapture(capturedPointerId)
@@ -1622,11 +1630,60 @@ function requestBrushStamp(event, force = false) {
     event.clientX - lastPaintClientX,
     event.clientY - lastPaintClientY,
   );
-  if (!force && pixelDistance < 3) return;
-  if (!prepareBrushStamp(event)) return;
+  if (!force && pixelDistance < 3) return false;
+  if (!prepareBrushStamp(event)) return false;
   lastPaintClientX = event.clientX;
   lastPaintClientY = event.clientY;
   surfacePainter.requestStamp();
+  return true;
+}
+
+function pointerSample(event, force = false) {
+  return {
+    clientX: event.clientX,
+    clientY: event.clientY,
+    pointerId: event.pointerId,
+    force,
+  };
+}
+
+function queuePaintSample(event, force = false) {
+  pendingPaintSample = pointerSample(event, force || pendingPaintSample?.force);
+  pendingHoverSample = undefined;
+}
+
+function queueHoverSample(event) {
+  pendingHoverSample = pointerSample(event);
+}
+
+function adaptivePaintInterval(workMilliseconds, minimumInterval) {
+  return Math.max(minimumInterval, workMilliseconds * 2);
+}
+
+function processQueuedBrushWork(time) {
+  if (!paintEnabled || !surfacePainter || !splat) return;
+
+  if (pendingPaintSample && time >= nextPaintSampleAt) {
+    const sample = pendingPaintSample;
+    pendingPaintSample = undefined;
+    const startedAt = performance.now();
+    const stamped = requestBrushStamp(sample, sample.force);
+    if (stamped) surfacePainter.flush();
+    const workMilliseconds = performance.now() - startedAt;
+    nextPaintSampleAt =
+      time + adaptivePaintInterval(workMilliseconds, paintSampleInterval);
+    return;
+  }
+
+  if (!paintDragging && pendingHoverSample && time >= nextHoverSampleAt) {
+    const sample = pendingHoverSample;
+    pendingHoverSample = undefined;
+    const startedAt = performance.now();
+    prepareBrushStamp(sample);
+    const workMilliseconds = performance.now() - startedAt;
+    nextHoverSampleAt =
+      time + adaptivePaintInterval(workMilliseconds, paintHoverInterval);
+  }
 }
 
 function finishPaintDrag(event) {
@@ -1713,10 +1770,11 @@ function bindSurfacePainting() {
       paintPointerId = event.pointerId;
       lastPaintClientX = Number.NaN;
       lastPaintClientY = Number.NaN;
+      nextPaintSampleAt = 0;
       controls.enabled = false;
       canvas.setPointerCapture(event.pointerId);
       canvas.classList.add("paint-dragging");
-      requestBrushStamp(event, true);
+      queuePaintSample(event, true);
     },
     { capture: true },
   );
@@ -1728,9 +1786,9 @@ function bindSurfacePainting() {
       if (paintDragging && event.pointerId === paintPointerId) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        requestBrushStamp(event);
+        queuePaintSample(event);
       } else {
-        prepareBrushStamp(event);
+        queueHoverSample(event);
       }
     },
     { capture: true },
@@ -1744,6 +1802,7 @@ function bindSurfacePainting() {
     capture: true,
   });
   canvas.addEventListener("pointerleave", () => {
+    pendingHoverSample = undefined;
     if (!paintDragging) brushCursor.classList.remove("visible");
   });
 }
@@ -3034,9 +3093,10 @@ renderer.setAnimationLoop((time) => {
     lighting.cameraPosition.copy(lightingCameraPosition);
   }
 
+  processQueuedBrushWork(time);
+  surfacePainter?.flush();
   renderer.autoClear = true;
   renderer.render(scene, camera);
-  surfacePainter?.flush();
   renderer.autoClear = false;
   renderer.clearDepth();
   renderer.render(gizmoScene, camera);

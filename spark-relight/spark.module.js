@@ -18524,7 +18524,9 @@ class RvisSurfacePainter {
         return value;
       }
     });
+    this.paintScratch = new RgbaArray();
     this.materialMap = null;
+    this.materialScratch = new RgbaArray();
     this.paintMode = 0;
     this.paintTool = 0;
     this.stampPending = false;
@@ -18690,12 +18692,14 @@ class RvisSurfacePainter {
     this.stampPending = false;
     this.lighting.setMaterialMap(this.originalMaterialMap);
     this.paintMap.dispose();
+    this.paintScratch.dispose();
     (_a2 = this.materialMap) == null ? void 0 : _a2.dispose();
+    this.materialScratch.dispose();
     this.mesh.objectModifiers = this.originalModifiers;
     this.mesh.updateGenerator();
   }
   flushColor() {
-    const nextPaintMap = new RgbaArray();
+    const nextPaintMap = this.paintScratch;
     try {
       nextPaintMap.render({
         renderer: this.renderer,
@@ -18704,16 +18708,22 @@ class RvisSurfacePainter {
       });
     } catch (error) {
       nextPaintMap.dispose();
+      this.paintScratch = new RgbaArray();
       throw error;
     }
     const previousPaintMap = this.paintMap;
     this.paintMap = nextPaintMap;
-    previousPaintMap.dispose();
+    if (previousPaintMap.readback) {
+      this.paintScratch = previousPaintMap;
+    } else {
+      previousPaintMap.dispose();
+      this.paintScratch = new RgbaArray();
+    }
     this.mesh.updateVersion();
     return true;
   }
   flushMaterial() {
-    const nextMaterialMap = new RgbaArray();
+    const nextMaterialMap = this.materialScratch;
     try {
       nextMaterialMap.render({
         renderer: this.renderer,
@@ -18722,12 +18732,13 @@ class RvisSurfacePainter {
       });
     } catch (error) {
       nextMaterialMap.dispose();
+      this.materialScratch = new RgbaArray();
       throw error;
     }
     const previousMaterialMap = this.materialMap;
     this.materialMap = nextMaterialMap;
+    this.materialScratch = previousMaterialMap ?? new RgbaArray();
     this.lighting.setMaterialMap(nextMaterialMap);
-    previousMaterialMap == null ? void 0 : previousMaterialMap.dispose();
     this.mesh.updateVersion();
     return true;
   }
@@ -18779,28 +18790,26 @@ class RvisSurfacePainter {
                 ${inputs.radius},
                 tangentDistance
               );
-              float thicknessWeight = 1.0;
-              if (${inputs.thicknessFilterEnabled}) {
-                thicknessWeight = 1.0 - smoothstep(
+              float weight = radialWeight;
+              if (weight > 0.0 && ${inputs.thicknessFilterEnabled}) {
+                weight *= 1.0 - smoothstep(
                   ${inputs.thickness} * 0.45,
                   ${inputs.thickness},
                   abs(signedDepth)
                 );
               }
-              float normalWeight = 1.0;
-              if (${inputs.normalFilterEnabled}) {
+              if (weight > 0.0 && ${inputs.normalFilterEnabled}) {
                 float alignment = abs(dot(
                   normalize(${inputs.splatNormal}),
                   brushNormal
                 ));
-                normalWeight = smoothstep(
+                weight *= smoothstep(
                   ${inputs.normalCosine},
                   min(1.0, ${inputs.normalCosine} + 0.2),
                   alignment
                 );
               }
-              float visibilityWeight = 1.0;
-              if (${inputs.visibilityFilterEnabled}) {
+              if (weight > 0.0 && ${inputs.visibilityFilterEnabled}) {
                 vec3 toCamera = normalize(
                   ${inputs.cameraPosition} - ${inputs.gsplat}.center
                 );
@@ -18810,7 +18819,7 @@ class RvisSurfacePainter {
                   ${inputs.index},
                   toCamera
                 );
-                visibilityWeight = smoothstep(
+                weight *= smoothstep(
                   ${inputs.visibilityThreshold},
                   min(
                     1.0,
@@ -18819,15 +18828,7 @@ class RvisSurfacePainter {
                   visibility
                 );
               }
-              float weight = clamp(
-                radialWeight
-                  * thicknessWeight
-                  * normalWeight
-                  * visibilityWeight
-                  * ${inputs.opacity},
-                0.0,
-                1.0
-              );
+              weight = clamp(weight * ${inputs.opacity}, 0.0, 1.0);
 
               if (${inputs.erasing}) {
                 paint.a *= 1.0 - weight;
@@ -18922,23 +18923,6 @@ class RvisSurfacePainter {
                   0
                 );
               }
-              vec4 originalMaterial = vec4(
-                ${RVIS_DEFAULT_ROUGHNESS},
-                ${RVIS_DEFAULT_SPECULAR},
-                0.0,
-                1.0
-              );
-              if (
-                ${inputs.index} >= 0
-                  && ${inputs.index} < ${inputs.originalMaterialMap}.count
-              ) {
-                originalMaterial = texelFetch(
-                  ${inputs.originalMaterialMap}.texture,
-                  splatTexCoord(${inputs.index}),
-                  0
-                );
-              }
-
               vec3 brushNormal = normalize(${inputs.brushNormal});
               vec3 delta = ${inputs.gsplat}.center - ${inputs.center};
               float signedDepth = dot(delta, brushNormal);
@@ -18950,28 +18934,26 @@ class RvisSurfacePainter {
                 ${inputs.radius},
                 tangentDistance
               );
-              float thicknessWeight = 1.0;
-              if (${inputs.thicknessFilterEnabled}) {
-                thicknessWeight = 1.0 - smoothstep(
+              float weight = radialWeight;
+              if (weight > 0.0 && ${inputs.thicknessFilterEnabled}) {
+                weight *= 1.0 - smoothstep(
                   ${inputs.thickness} * 0.45,
                   ${inputs.thickness},
                   abs(signedDepth)
                 );
               }
-              float normalWeight = 1.0;
-              if (${inputs.normalFilterEnabled}) {
+              if (weight > 0.0 && ${inputs.normalFilterEnabled}) {
                 float alignment = abs(dot(
                   normalize(${inputs.splatNormal}),
                   brushNormal
                 ));
-                normalWeight = smoothstep(
+                weight *= smoothstep(
                   ${inputs.normalCosine},
                   min(1.0, ${inputs.normalCosine} + 0.2),
                   alignment
                 );
               }
-              float visibilityWeight = 1.0;
-              if (${inputs.visibilityFilterEnabled}) {
+              if (weight > 0.0 && ${inputs.visibilityFilterEnabled}) {
                 vec3 toCamera = normalize(
                   ${inputs.cameraPosition} - ${inputs.gsplat}.center
                 );
@@ -18981,7 +18963,7 @@ class RvisSurfacePainter {
                   ${inputs.index},
                   toCamera
                 );
-                visibilityWeight = smoothstep(
+                weight *= smoothstep(
                   ${inputs.visibilityThreshold},
                   min(
                     1.0,
@@ -18990,19 +18972,27 @@ class RvisSurfacePainter {
                   visibility
                 );
               }
-              float weight = clamp(
-                radialWeight
-                  * thicknessWeight
-                  * normalWeight
-                  * visibilityWeight
-                  * ${inputs.opacity},
-                0.0,
-                1.0
-              );
+              weight = clamp(weight * ${inputs.opacity}, 0.0, 1.0);
 
-              if (${inputs.erasing}) {
+              if (${inputs.erasing} && weight > 0.0) {
+                vec4 originalMaterial = vec4(
+                  ${RVIS_DEFAULT_ROUGHNESS},
+                  ${RVIS_DEFAULT_SPECULAR},
+                  0.0,
+                  1.0
+                );
+                if (
+                  ${inputs.index} >= 0
+                    && ${inputs.index} < ${inputs.originalMaterialMap}.count
+                ) {
+                  originalMaterial = texelFetch(
+                    ${inputs.originalMaterialMap}.texture,
+                    splatTexCoord(${inputs.index}),
+                    0
+                  );
+                }
                 material = mix(material, originalMaterial, weight);
-              } else {
+              } else if (weight > 0.0) {
                 material.r = mix(
                   material.r,
                   ${inputs.roughness},
