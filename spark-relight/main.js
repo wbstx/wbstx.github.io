@@ -544,7 +544,7 @@ const paintFilters = {
   },
 };
 
-const coarsePointerMedia = window.matchMedia("(pointer: coarse)");
+const coarsePointerMedia = window.matchMedia("(any-pointer: coarse)");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setPixelRatio(
   Math.min(window.devicePixelRatio || 1, coarsePointerMedia.matches ? 1 : 1.5),

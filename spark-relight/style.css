@@ -891,7 +891,7 @@ input[type="color"] {
   font-variant-numeric: tabular-nums;
 }
 
-@media (pointer: coarse), (hover: none) {
+@media (any-pointer: coarse), (hover: none) {
   .color-control {
     min-height: 44px;
   }
