@@ -2943,13 +2943,6 @@ async function loadScene(
 }
 
 function initialize() {
-  const bootstrapSceneId = globalThis.__sparkRelightInitialSceneId;
-  const bootstrapLocalFiles = globalThis.__sparkRelightInitialLocalFiles;
-  globalThis.__sparkRelightInitialSceneId = undefined;
-  globalThis.__sparkRelightInitialLocalFiles = undefined;
-  selectedLocalSogFile = bootstrapLocalFiles?.sog ?? localSogInput.files?.[0];
-  selectedLocalRvisFile =
-    bootstrapLocalFiles?.rvis ?? localRvisInput.files?.[0];
   addPointLight({ switchToPoint: false, reveal: false });
   populateSceneList();
   renderHdriPresets();
@@ -2964,16 +2957,6 @@ function initialize() {
   viewportHint.textContent =
     "Choose an online scene or open a local SOG + RVIS pair";
   loadingLayer.classList.add("hidden");
-  globalThis.__sparkRelightReady = true;
-
-  if (selectedLocalSogFile && selectedLocalRvisFile) {
-    void loadScene(
-      createLocalSceneConfig(selectedLocalSogFile, selectedLocalRvisFile),
-    );
-    return;
-  }
-  const bootstrapScene = scenesById.get(bootstrapSceneId);
-  if (bootstrapScene) void loadScene(bootstrapScene);
 }
 
 function resetFpsCounter(time = performance.now()) {
