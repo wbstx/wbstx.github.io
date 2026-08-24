@@ -1,4 +1,5 @@
 import {
+  RVIS_FLAG_DIRECTIONAL_RASTER,
   RVIS_FLAG_SURFACE_SMOOTHING,
   RVIS_FLAG_SURFACE_V2,
   RVIS_MAX_ENVIRONMENT_LIGHTS,
@@ -61,9 +62,37 @@ const SCENES = [
   {
     id: "065a31a8",
     label: "League of Legends · Vi",
-    detail: "616K splats",
+    detail: "616K splats · BVH / raster / prune comparison",
     sog: `${ASSET_BASE}/065a31a8.sog`,
-    rvis: `${ASSET_BASE}/065a31a8.rvis`,
+    visibilityVariants: [
+      {
+        id: "bvh-before",
+        label: "BVH · Before",
+        detail: "32 dirs · no bias · estimated 20.2 s",
+        rvis: `${ASSET_BASE}/065a31a8.rvis`,
+      },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 11.4 s · visibility MAE 0.0368",
+        rvis: `${ASSET_BASE}/065a31a8-raster1024-32.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 616,488 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/065a31a8-t005-full.spz`,
+        rvis: `${ASSET_BASE}/065a31a8-raster1024-32.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 545,311 splats · removed 71,177 (11.55%)",
+        sog: `${ASSET_BASE}/065a31a8-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/065a31a8-t005-pruned.rvis`,
+      },
+    ],
+    defaultVisibilityVariant: "raster-after",
     background: 0x000000,
     position: [2.435713, 19.986647, 44.334667],
     target: [3.373088, 10.712549, -3.776106],
@@ -74,9 +103,37 @@ const SCENES = [
   {
     id: "2826d2c0",
     label: "DIY Automated Rig Scan",
-    detail: "44.5K splats · 10%",
+    detail: "44.5K splats · 10% · BVH / raster / prune comparison",
     sog: `${ASSET_BASE}/2826d2c0-10pct.sog`,
-    rvis: `${ASSET_BASE}/2826d2c0-10pct-bvh.rvis`,
+    visibilityVariants: [
+      {
+        id: "bvh-before",
+        label: "BVH · Before",
+        detail: "32 dirs · no bias · estimated 1.4 s",
+        rvis: `${ASSET_BASE}/2826d2c0-10pct-bvh.rvis`,
+      },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 4.6 s · visibility MAE 0.0995",
+        rvis: `${ASSET_BASE}/2826d2c0-10pct-raster1024-32.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 44,541 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/2826d2c0-t005-full.spz`,
+        rvis: `${ASSET_BASE}/2826d2c0-10pct-raster1024-32.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 43,839 splats · removed 702 (1.58%)",
+        sog: `${ASSET_BASE}/2826d2c0-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/2826d2c0-t005-pruned.rvis`,
+      },
+    ],
+    defaultVisibilityVariant: "raster-after",
     background: 0x000000,
     position: [-13.560485, 8.870821, -0.961301],
     target: [-0.105754, 0.900574, -0.836827],
@@ -87,7 +144,7 @@ const SCENES = [
   {
     id: "1a2d46fa",
     label: "The Dude · Electric Guitar",
-    detail: "194K splats · 6 visibility bakes",
+    detail: "194K splats · 7 bakes · prune A/B",
     sog: `${ASSET_BASE}/1a2d46fa.sog`,
     visibilityVariants: [
       {
@@ -122,12 +179,32 @@ const SCENES = [
       },
       {
         id: "strong-smooth",
-        label: "Strong Smooth",
+        label: "BVH · Before",
         detail: "64 dirs · 0.5% bias · 3-pass normalized surface smoothing",
         rvis: `${ASSET_BASE}/1a2d46fa-bias0.005-64-surface-mix3-r0.005-s0.75-n32.rvis`,
       },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 10.1 s · matched strong smoothing · MAE 0.0211",
+        rvis: `${ASSET_BASE}/1a2d46fa-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 194,369 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/1a2d46fa-t005-full.spz`,
+        rvis: `${ASSET_BASE}/1a2d46fa-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 194,075 splats · removed 294 (0.15%)",
+        sog: `${ASSET_BASE}/1a2d46fa-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/1a2d46fa-t005-pruned.rvis`,
+      },
     ],
-    defaultVisibilityVariant: "strong-smooth",
+    defaultVisibilityVariant: "raster-after",
     background: 0xc0c0c0,
     position: [0.83327, 1.120123, 2.101312],
     target: [0.52372, 0.860791, 0.663514],
@@ -138,7 +215,7 @@ const SCENES = [
   {
     id: "12fa2893",
     label: "StarEngine X CF450",
-    detail: "814K splats · SH3 · 5 visibility bakes",
+    detail: "814K splats · SH3 · 6 visibility bakes",
     sog: `${ASSET_BASE}/12fa2893.sog`,
     visibilityVariants: [
       {
@@ -167,12 +244,32 @@ const SCENES = [
       },
       {
         id: "strong-smooth",
-        label: "Strong Smooth",
+        label: "BVH · Before",
         detail: "64 dirs · 0.5% bias · 3-pass normalized surface smoothing",
         rvis: `${ASSET_BASE}/12fa2893-bias0.005-64-strong-smooth.rvis`,
       },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 35.7 s · matched strong smoothing · MAE 0.0488",
+        rvis: `${ASSET_BASE}/12fa2893-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 814,343 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/12fa2893-t005-full.spz`,
+        rvis: `${ASSET_BASE}/12fa2893-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 812,382 splats · removed 1,961 (0.24%)",
+        sog: `${ASSET_BASE}/12fa2893-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/12fa2893-t005-pruned.rvis`,
+      },
     ],
-    defaultVisibilityVariant: "strong-smooth",
+    defaultVisibilityVariant: "raster-after",
     background: 0x000000,
     position: [-2.080758, 1.264189, -3.159627],
     target: [-0.363998, 0.860582, -0.178044],
@@ -183,7 +280,7 @@ const SCENES = [
   {
     id: "0857edc2",
     label: "Husqvarna Svartpilen 401",
-    detail: "1.43M splats · SH3 · 4 visibility bakes",
+    detail: "1.43M splats · SH3 · 5 visibility bakes",
     sog: `${ASSET_BASE}/0857edc2.sog`,
     visibilityVariants: [
       {
@@ -206,12 +303,32 @@ const SCENES = [
       },
       {
         id: "strong-smooth",
-        label: "Strong Smooth",
+        label: "BVH · Before",
         detail: "64 dirs · 0.5% bias · 3-pass normalized surface smoothing",
         rvis: `${ASSET_BASE}/0857edc2-bias0.005-64-strong-smooth.rvis`,
       },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 54.9 s · matched strong smoothing · MAE 0.0644",
+        rvis: `${ASSET_BASE}/0857edc2-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 1,434,568 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/0857edc2-t005-full.spz`,
+        rvis: `${ASSET_BASE}/0857edc2-raster1024-bias0.005-64-strong-smooth.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 1,428,704 splats · removed 5,864 (0.41%)",
+        sog: `${ASSET_BASE}/0857edc2-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/0857edc2-t005-pruned.rvis`,
+      },
     ],
-    defaultVisibilityVariant: "strong-smooth",
+    defaultVisibilityVariant: "raster-after",
     background: 0x000000,
     position: [16.467173, 5.040628, -3.482956],
     target: [1.689017, 2.992924, -1.220337],
@@ -222,7 +339,7 @@ const SCENES = [
   {
     id: "cbe96076",
     label: "Cicada Shell",
-    detail: "653K splats · SH3 · 5 visibility bakes",
+    detail: "653K splats · SH3 · 6 visibility bakes",
     sog: `${ASSET_BASE}/cbe96076.sog`,
     visibilityVariants: [
       {
@@ -251,12 +368,32 @@ const SCENES = [
       },
       {
         id: "thin-smooth",
-        label: "Thin Smooth",
+        label: "BVH · Before",
         detail: "0.2% radius · 0.4 strength · 12 neighbors",
         rvis: `${ASSET_BASE}/cbe96076-bias0.0015-64-smooth0.002-s0.4-n12.rvis`,
       },
+      {
+        id: "raster-after",
+        label: "Raster · After",
+        detail: "Raster 1024 · 38.3 s · matched thin smoothing · MAE 0.0825",
+        rvis: `${ASSET_BASE}/cbe96076-raster1024-bias0.0015-64-thin-smooth.rvis`,
+      },
+      {
+        id: "prune-reference",
+        label: "Prune · Ref",
+        detail: "SPZ reference · 652,804 splats · same raster RVIS",
+        sog: `${ASSET_BASE}/cbe96076-t005-full.spz`,
+        rvis: `${ASSET_BASE}/cbe96076-raster1024-bias0.0015-64-thin-smooth.rvis`,
+      },
+      {
+        id: "pruned-t005",
+        label: "Pruned · 0.05",
+        detail: "BVH ∩ raster · 580,954 splats · removed 71,850 (11.01%)",
+        sog: `${ASSET_BASE}/cbe96076-t005-pruned.spz`,
+        rvis: `${ASSET_BASE}/cbe96076-t005-pruned.rvis`,
+      },
     ],
-    defaultVisibilityVariant: "thin-smooth",
+    defaultVisibilityVariant: "raster-after",
     background: 0x1e1e1e,
     position: [-0.236086, 0.93743, -1.413392],
     target: [0.139904, 0.409013, 0.083489],
@@ -293,6 +430,10 @@ function resolveVisibilityVariant(sceneConfig, requestedId) {
     ) ??
     variants[0]
   );
+}
+
+function resolveVariantGeometry(sceneConfig, variant) {
+  return variant?.sog ?? sceneConfig.sog;
 }
 
 const canvas = document.getElementById("canvas");
@@ -1773,6 +1914,30 @@ function fitCamera(sceneConfig) {
   syncEnvironmentBackground();
 }
 
+function captureCameraView() {
+  return {
+    position: camera.position.clone(),
+    up: camera.up.clone(),
+    target: controls.target.clone(),
+    fov: camera.fov,
+    near: camera.near,
+    far: camera.far,
+    zoom: camera.zoom,
+  };
+}
+
+function restoreCameraView(view) {
+  camera.position.copy(view.position);
+  camera.up.copy(view.up);
+  controls.target.copy(view.target);
+  camera.fov = view.fov;
+  camera.near = view.near;
+  camera.far = view.far;
+  camera.zoom = view.zoom;
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
 function populateSceneList() {
   const fragment = document.createDocumentFragment();
   for (const sceneConfig of SCENES) {
@@ -1951,7 +2116,8 @@ function updateVisibilityVariantState(sceneConfig, selectedId, disabled) {
 }
 
 function updateVisibilityVariantMetadata(variant, header) {
-  const details = [`${header.sampleCount} directions`];
+  const details = variant.detail ? [variant.detail] : [];
+  details.push(`${header.sampleCount} directions`);
   if (header.rayOriginBias > 0) {
     details.push(`ray bias ${header.rayOriginBias.toPrecision(4)}`);
   } else {
@@ -1970,6 +2136,11 @@ function updateVisibilityVariantMetadata(variant, header) {
   } else if ((header.flags & RVIS_FLAG_SURFACE_SMOOTHING) !== 0) {
     details.push("surface-aware smoothing");
   }
+  details.unshift(
+    (header.flags & RVIS_FLAG_DIRECTIONAL_RASTER) !== 0
+      ? "directional raster"
+      : "BVH ray tracing",
+  );
   visibilityVariantValue.value = variant.label;
   visibilityVariantDescription.textContent = details.join(" · ");
 }
@@ -2433,6 +2604,13 @@ async function loadVisibilityVariant(requestedId) {
   if (!activeScene || !splat || !lighting) return;
   const sceneConfig = activeScene;
   const variant = resolveVisibilityVariant(sceneConfig, requestedId);
+  if (
+    resolveVariantGeometry(sceneConfig, variant) !==
+    resolveVariantGeometry(sceneConfig, activeVisibilityVariant)
+  ) {
+    await loadScene(sceneConfig, variant.id, { preserveCamera: true });
+    return;
+  }
   const loadToken = ++visibilityLoadToken;
   updateVisibilityVariantState(sceneConfig, variant.id, true);
   assetStatus.classList.remove("ready", "error");
@@ -2486,12 +2664,12 @@ async function loadVisibilityVariant(requestedId) {
     activeVisibilityVariant = variant;
     previousLighting.dispose();
     nextLighting = undefined;
-
     sceneSubtitle.textContent = `${sceneConfig.id} · ${variant.label}`;
     updateVisibilityVariantMetadata(variant, rvis.header);
     statusText.textContent = "RVIS ready";
     assetStatus.classList.add("ready");
     loadingLayer.classList.add("hidden");
+    resetFpsCounter();
     updatePageUrl(sceneConfig, variant);
   } catch (error) {
     console.error(error);
@@ -2513,12 +2691,17 @@ async function loadVisibilityVariant(requestedId) {
   }
 }
 
-async function loadScene(sceneConfig, requestedVisibilityVariant) {
+async function loadScene(
+  sceneConfig,
+  requestedVisibilityVariant,
+  { preserveCamera = false } = {},
+) {
   const localFiles = sceneConfig.localFiles;
   const visibilityVariant = resolveVisibilityVariant(
     sceneConfig,
     requestedVisibilityVariant,
   );
+  const preservedCameraView = preserveCamera ? captureCameraView() : undefined;
   const loadToken = ++sceneLoadToken;
   sceneLoading = true;
   localImportError = undefined;
@@ -2544,7 +2727,9 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
           stream: localFiles.sog.stream(),
           streamLength: localFiles.sog.size,
         }
-      : { url: assetUrl(sceneConfig.sog) }),
+      : {
+          url: assetUrl(resolveVariantGeometry(sceneConfig, visibilityVariant)),
+        }),
     onProgress: (event) => {
       if (loadToken !== sceneLoadToken || !event.lengthComputable) return;
       loadingDetail.textContent = `Loading scene · ${Math.round((event.loaded / event.total) * 100)}%`;
@@ -2582,6 +2767,7 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
     committed = true;
     scene.add(splat);
     fitCamera(sceneConfig);
+    if (preservedCameraView) restoreCameraView(preservedCameraView);
     createSurfacePainter();
     setMode(currentMode);
     setLightType(currentLightType);
@@ -2593,6 +2779,7 @@ async function loadScene(sceneConfig, requestedVisibilityVariant) {
     statusText.textContent = "RVIS ready";
     assetStatus.classList.add("ready");
     loadingLayer.classList.add("hidden");
+    resetFpsCounter();
     updatePageUrl(sceneConfig, visibilityVariant);
   } catch (error) {
     console.error(error);
@@ -2648,6 +2835,9 @@ function resetFpsCounter(time = performance.now()) {
   fpsWindowStartedAt = time;
   fpsWindowFrames = 0;
   smoothedFps = undefined;
+  fpsValue.textContent = "—";
+  delete fpsMeter.dataset.quality;
+  fpsMeter.title = "Measuring frames per second";
 }
 
 function updateFpsCounter(time) {
