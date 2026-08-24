@@ -509,6 +509,20 @@ const paintToolControl = document.getElementById("paint-tool");
 const paintModeControl = document.getElementById("paint-mode");
 const paintColorModeControl = document.getElementById("paint-color-mode");
 const paintDescription = document.getElementById("paint-description");
+const paintColorHueInput = document.getElementById("paint-color-hue");
+const paintColorHueOutput = document.getElementById("paint-color-hue-value");
+const paintColorSaturationInput = document.getElementById(
+  "paint-color-saturation",
+);
+const paintColorSaturationOutput = document.getElementById(
+  "paint-color-saturation-value",
+);
+const paintColorLightnessInput = document.getElementById(
+  "paint-color-lightness",
+);
+const paintColorLightnessOutput = document.getElementById(
+  "paint-color-lightness-value",
+);
 const paintFilters = {
   thickness: {
     label: "depth",
@@ -530,8 +544,11 @@ const paintFilters = {
   },
 };
 
+const coarsePointerMedia = window.matchMedia("(pointer: coarse)");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio || 1, coarsePointerMedia.matches ? 1 : 1.5),
+);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -550,7 +567,10 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.screenSpacePanning = true;
 
-const spark = new SparkRenderer({ renderer });
+const spark = new SparkRenderer({
+  renderer,
+  lodSplatCount: coarsePointerMedia.matches ? 900_000 : undefined,
+});
 scene.add(spark);
 
 let lighting;
@@ -1332,6 +1352,105 @@ function updateSurfacePainterControls() {
   surfacePainter.visibilityThreshold = Number(inputs.brushVisibility.value);
 }
 
+function hexColorToHsl(value) {
+  const match = /^#([0-9a-f]{6})$/i.exec(value);
+  if (!match) return undefined;
+  const packed = Number.parseInt(match[1], 16);
+  const red = ((packed >> 16) & 0xff) / 255;
+  const green = ((packed >> 8) & 0xff) / 255;
+  const blue = (packed & 0xff) / 255;
+  const maximum = Math.max(red, green, blue);
+  const minimum = Math.min(red, green, blue);
+  const delta = maximum - minimum;
+  const lightness = (maximum + minimum) * 0.5;
+  let hue = 0;
+  let saturation = 0;
+
+  if (delta > 0) {
+    saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    if (maximum === red) {
+      hue = 60 * (((green - blue) / delta) % 6);
+    } else if (maximum === green) {
+      hue = 60 * ((blue - red) / delta + 2);
+    } else {
+      hue = 60 * ((red - green) / delta + 4);
+    }
+  }
+
+  return {
+    hue: (hue + 360) % 360,
+    saturation: saturation * 100,
+    lightness: lightness * 100,
+  };
+}
+
+function hslToHexColor(hue, saturation, lightness) {
+  const normalizedHue = ((hue % 360) + 360) % 360;
+  const normalizedSaturation = THREE.MathUtils.clamp(saturation / 100, 0, 1);
+  const normalizedLightness = THREE.MathUtils.clamp(lightness / 100, 0, 1);
+  const chroma =
+    (1 - Math.abs(2 * normalizedLightness - 1)) * normalizedSaturation;
+  const section = normalizedHue / 60;
+  const secondary = chroma * (1 - Math.abs((section % 2) - 1));
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (section < 1) {
+    red = chroma;
+    green = secondary;
+  } else if (section < 2) {
+    red = secondary;
+    green = chroma;
+  } else if (section < 3) {
+    green = chroma;
+    blue = secondary;
+  } else if (section < 4) {
+    green = secondary;
+    blue = chroma;
+  } else if (section < 5) {
+    red = secondary;
+    blue = chroma;
+  } else {
+    red = chroma;
+    blue = secondary;
+  }
+
+  const offset = normalizedLightness - chroma * 0.5;
+  return `#${[red, green, blue]
+    .map((channel) =>
+      Math.round((channel + offset) * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+
+function syncPaintColorChannels() {
+  const hsl = hexColorToHsl(inputs.paintColor.value);
+  if (!hsl) return;
+  const hue = Math.round(hsl.hue);
+  const saturation = Math.round(hsl.saturation);
+  const lightness = Math.round(hsl.lightness);
+  paintColorHueInput.value = String(hue);
+  paintColorSaturationInput.value = String(saturation);
+  paintColorLightnessInput.value = String(lightness);
+  paintColorHueOutput.textContent = `${hue}°`;
+  paintColorSaturationOutput.textContent = `${saturation}%`;
+  paintColorLightnessOutput.textContent = `${lightness}%`;
+}
+
+function updatePaintColorFromChannels() {
+  const hue = Number(paintColorHueInput.value);
+  const saturation = Number(paintColorSaturationInput.value);
+  const lightness = Number(paintColorLightnessInput.value);
+  inputs.paintColor.value = hslToHexColor(hue, saturation, lightness);
+  paintColorHueOutput.textContent = `${Math.round(hue)}°`;
+  paintColorSaturationOutput.textContent = `${Math.round(saturation)}%`;
+  paintColorLightnessOutput.textContent = `${Math.round(lightness)}%`;
+  updateSurfacePainterControls();
+}
+
 function setPaintColorMode(mode) {
   const nextMode = Number(mode);
   if (
@@ -1564,6 +1683,15 @@ function bindSurfacePainting() {
   ]) {
     input.addEventListener("input", updateSurfacePainterControls);
   }
+  inputs.paintColor.addEventListener("input", syncPaintColorChannels);
+  for (const input of [
+    paintColorHueInput,
+    paintColorSaturationInput,
+    paintColorLightnessInput,
+  ]) {
+    input.addEventListener("input", updatePaintColorFromChannels);
+  }
+  syncPaintColorChannels();
   setPaintColorMode(currentPaintColorMode);
   setPaintMode(currentPaintMode);
   setPaintTool(PaintInteractionTool.VIEW);
@@ -2863,6 +2991,12 @@ function updateFpsCounter(time) {
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  renderer.setPixelRatio(
+    Math.min(
+      window.devicePixelRatio || 1,
+      coarsePointerMedia.matches ? 1 : 1.5,
+    ),
+  );
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 

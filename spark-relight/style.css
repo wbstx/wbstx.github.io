@@ -873,6 +873,44 @@ input[type="color"] {
   cursor: pointer;
 }
 
+.paint-color-fallback {
+  display: none;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.paint-color-fallback .range-control {
+  gap: 5px;
+}
+
+.paint-color-fallback output {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (pointer: coarse), (hover: none) {
+  .color-control {
+    min-height: 44px;
+  }
+
+  input[type="color"] {
+    width: 54px;
+    height: 40px;
+    padding: 3px;
+  }
+
+  input[type="range"] {
+    height: 28px;
+  }
+
+  .paint-color-fallback:not([hidden]) {
+    display: grid;
+  }
+}
+
 .panel-footer {
   display: flex;
   align-items: center;

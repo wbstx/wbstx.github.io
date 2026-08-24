@@ -461,6 +461,53 @@
             <span>Color</span>
             <input id="paint-color" type="color" value="#e84a5f" />
           </label>
+          <div
+            class="paint-color-fallback color-paint-only"
+            aria-label="Tablet-friendly brush color controls"
+          >
+            <label class="range-control" for="paint-color-hue">
+              <span>
+                Hue
+                <output id="paint-color-hue-value">352°</output>
+              </span>
+              <input
+                id="paint-color-hue"
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value="352"
+              />
+            </label>
+            <label class="range-control" for="paint-color-saturation">
+              <span>
+                Saturation
+                <output id="paint-color-saturation-value">77%</output>
+              </span>
+              <input
+                id="paint-color-saturation"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="77"
+              />
+            </label>
+            <label class="range-control" for="paint-color-lightness">
+              <span>
+                Lightness
+                <output id="paint-color-lightness-value">60%</output>
+              </span>
+              <input
+                id="paint-color-lightness"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="60"
+              />
+            </label>
+          </div>
           <label
             class="range-control material-paint-only"
             for="brush-roughness"
