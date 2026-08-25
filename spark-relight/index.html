@@ -388,7 +388,7 @@
             </button>
           </div>
           <div
-            class="segmented-control two-up"
+            class="segmented-control"
             id="paint-mode"
             role="group"
             aria-label="Surface paint target"
@@ -396,10 +396,12 @@
             <button type="button" data-paint-mode="0" aria-pressed="true">
               Color
             </button>
+            <button type="button" data-paint-mode="2">Lighten</button>
+            <button type="button" data-paint-mode="3">Darken</button>
             <button type="button" data-paint-mode="1">Material</button>
           </div>
           <div
-            class="segmented-control two-up color-paint-only"
+            class="segmented-control three-up color-paint-only"
             id="paint-color-mode"
             role="group"
             aria-label="Color application mode"
@@ -407,6 +409,7 @@
             <button type="button" data-paint-color-mode="1" aria-pressed="true">
               Tint · detail
             </button>
+            <button type="button" data-paint-color-mode="2">Tint ± EV</button>
             <button type="button" data-paint-color-mode="0">Solid</button>
           </div>
           <p class="mode-description" id="paint-description">
@@ -508,6 +511,23 @@
               />
             </label>
           </div>
+          <label
+            class="range-control brightness-paint-only"
+            for="brush-exposure"
+            hidden
+          >
+            <span>
+              Exposure <output id="brush-exposure-value">+0.5 EV</output>
+            </span>
+            <input
+              id="brush-exposure"
+              type="range"
+              min="0.1"
+              max="2"
+              step="0.1"
+              value="0.5"
+            />
+          </label>
           <label
             class="range-control material-paint-only"
             for="brush-roughness"

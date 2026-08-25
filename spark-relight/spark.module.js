@@ -18455,6 +18455,8 @@ class RvisGroundShadow {
 var RvisSurfacePaintMode = /* @__PURE__ */ ((RvisSurfacePaintMode2) => {
   RvisSurfacePaintMode2[RvisSurfacePaintMode2["COLOR"] = 0] = "COLOR";
   RvisSurfacePaintMode2[RvisSurfacePaintMode2["MATERIAL"] = 1] = "MATERIAL";
+  RvisSurfacePaintMode2[RvisSurfacePaintMode2["LIGHTEN"] = 2] = "LIGHTEN";
+  RvisSurfacePaintMode2[RvisSurfacePaintMode2["DARKEN"] = 3] = "DARKEN";
   return RvisSurfacePaintMode2;
 })(RvisSurfacePaintMode || {});
 var RvisSurfacePaintTool = /* @__PURE__ */ ((RvisSurfacePaintTool2) => {
@@ -18465,6 +18467,7 @@ var RvisSurfacePaintTool = /* @__PURE__ */ ((RvisSurfacePaintTool2) => {
 var RvisSurfaceColorMode = /* @__PURE__ */ ((RvisSurfaceColorMode2) => {
   RvisSurfaceColorMode2[RvisSurfaceColorMode2["SOLID"] = 0] = "SOLID";
   RvisSurfaceColorMode2[RvisSurfaceColorMode2["TINT"] = 1] = "TINT";
+  RvisSurfaceColorMode2[RvisSurfaceColorMode2["TINT_EXPOSURE"] = 2] = "TINT_EXPOSURE";
   return RvisSurfaceColorMode2;
 })(RvisSurfaceColorMode || {});
 class RvisSurfacePainter {
@@ -18495,6 +18498,8 @@ class RvisSurfacePainter {
     );
     this.roughnessUniform = dynoFloat(RVIS_DEFAULT_ROUGHNESS);
     this.specularUniform = dynoFloat(RVIS_DEFAULT_SPECULAR);
+    this.exposureUniform = dynoFloat(0.5);
+    this.brightnessDirectionUniform = dynoFloat(1);
     this.paintMapUniform = new DynoUniform({
       key: "rvisSurfacePaintMap",
       type: TRgbaArray,
@@ -18524,9 +18529,26 @@ class RvisSurfacePainter {
         return value;
       }
     });
+    this.brightnessMapUniform = new DynoUniform({
+      key: "rvisSurfaceBrightnessMap",
+      type: TRgbaArray,
+      value: {
+        texture: RgbaArray.getEmpty(),
+        count: 0
+      },
+      globals: () => [defineRgbaArray],
+      update: (value) => {
+        var _a2, _b2;
+        value.texture = ((_a2 = this.brightnessMap) == null ? void 0 : _a2.getTexture()) ?? RgbaArray.getEmpty();
+        value.count = ((_b2 = this.brightnessMap) == null ? void 0 : _b2.count) ?? 0;
+        return value;
+      }
+    });
     this.paintScratch = new RgbaArray();
     this.materialMap = null;
     this.materialScratch = new RgbaArray();
+    this.brightnessMap = null;
+    this.brightnessScratch = new RgbaArray();
     this.paintMode = 0;
     this.paintTool = 0;
     this.stampPending = false;
@@ -18560,6 +18582,7 @@ class RvisSurfacePainter {
     this.color.set(options.color ?? "#e84a5f");
     this.roughness = options.roughness ?? 0.3;
     this.specular = options.specular ?? 1;
+    this.exposure = options.exposure ?? 0.5;
     this.mode = options.mode ?? 0;
     this.tool = options.tool ?? 0;
     this.colorMode = options.colorMode ?? 1;
@@ -18574,6 +18597,7 @@ class RvisSurfacePainter {
     mesh.objectModifiers = modifiers2;
     mesh.updateGenerator();
     this.materialReader = this.createMaterialReader();
+    this.brightnessReader = this.createBrightnessReader();
   }
   get radius() {
     return this.radiusUniform.value;
@@ -18634,10 +18658,11 @@ class RvisSurfacePainter {
     return this.paintMode;
   }
   set mode(value) {
-    if (value !== 0 && value !== 1) {
+    if (value !== 0 && value !== 1 && value !== 2 && value !== 3) {
       throw new RangeError(`Unsupported surface paint mode: ${value}`);
     }
     this.paintMode = value;
+    this.brightnessDirectionUniform.value = value === 3 ? -1 : 1;
   }
   get tool() {
     return this.paintTool;
@@ -18653,7 +18678,7 @@ class RvisSurfacePainter {
     return this.colorModeUniform.value;
   }
   set colorMode(value) {
-    if (value !== 0 && value !== 1) {
+    if (value !== 0 && value !== 1 && value !== 2) {
       throw new RangeError(`Unsupported surface color mode: ${value}`);
     }
     this.colorModeUniform.value = value;
@@ -18670,6 +18695,12 @@ class RvisSurfacePainter {
   set specular(value) {
     this.specularUniform.value = THREE.MathUtils.clamp(value, 0, 1);
   }
+  get exposure() {
+    return this.exposureUniform.value;
+  }
+  set exposure(value) {
+    this.exposureUniform.value = THREE.MathUtils.clamp(value, 0.1, 2);
+  }
   setBrush({
     center,
     normal,
@@ -18685,16 +18716,24 @@ class RvisSurfacePainter {
   flush() {
     if (!this.stampPending) return false;
     this.stampPending = false;
-    return this.paintMode === 1 ? this.flushMaterial() : this.flushColor();
+    if (this.paintMode === 1) {
+      return this.flushMaterial();
+    }
+    if (this.paintMode === 2 || this.paintMode === 3) {
+      return this.flushBrightness();
+    }
+    return this.flushColor();
   }
   dispose() {
-    var _a2;
+    var _a2, _b2;
     this.stampPending = false;
     this.lighting.setMaterialMap(this.originalMaterialMap);
     this.paintMap.dispose();
     this.paintScratch.dispose();
     (_a2 = this.materialMap) == null ? void 0 : _a2.dispose();
     this.materialScratch.dispose();
+    (_b2 = this.brightnessMap) == null ? void 0 : _b2.dispose();
+    this.brightnessScratch.dispose();
     this.mesh.objectModifiers = this.originalModifiers;
     this.mesh.updateGenerator();
   }
@@ -18739,6 +18778,25 @@ class RvisSurfacePainter {
     this.materialMap = nextMaterialMap;
     this.materialScratch = previousMaterialMap ?? new RgbaArray();
     this.lighting.setMaterialMap(nextMaterialMap);
+    this.mesh.updateVersion();
+    return true;
+  }
+  flushBrightness() {
+    const nextBrightnessMap = this.brightnessScratch;
+    try {
+      nextBrightnessMap.render({
+        renderer: this.renderer,
+        count: this.mesh.numSplats,
+        reader: this.brightnessReader
+      });
+    } catch (error) {
+      nextBrightnessMap.dispose();
+      this.brightnessScratch = new RgbaArray();
+      throw error;
+    }
+    const previousBrightnessMap = this.brightnessMap;
+    this.brightnessMap = nextBrightnessMap;
+    this.brightnessScratch = previousBrightnessMap ?? new RgbaArray();
     this.mesh.updateVersion();
     return true;
   }
@@ -19036,6 +19094,153 @@ class RvisSurfacePainter {
       };
     });
   }
+  createBrightnessReader() {
+    const packedSplats = this.mesh.packedSplats;
+    if (!packedSplats) {
+      throw new Error("RVIS brightness painting requires PackedSplats");
+    }
+    return dynoBlock({ index: "int" }, { rgba8: "vec4" }, ({ index }) => {
+      if (!index) throw new Error("Missing splat index");
+      const gsplat = packedSplats.fetchSplat({ index });
+      const splatNormal = gsplatNormal(gsplat);
+      const currentBrightness = readRgbaArray(this.brightnessMapUniform, index);
+      const shader = new Dyno({
+        inTypes: {
+          gsplat: Gsplat,
+          splatNormal: "vec3",
+          index: "int",
+          currentBrightness: "vec4",
+          erasing: "bool",
+          center: "vec3",
+          brushNormal: "vec3",
+          cameraPosition: "vec3",
+          radius: "float",
+          thickness: "float",
+          opacity: "float",
+          thicknessFilterEnabled: "bool",
+          normalFilterEnabled: "bool",
+          visibilityFilterEnabled: "bool",
+          exposure: "float",
+          direction: "float",
+          visibilityThreshold: "float",
+          visibilityFeather: "float",
+          normalCosine: "float",
+          coefficients: "sampler2DArray",
+          textureWidth: "int"
+        },
+        outTypes: { rgba8: "vec4" },
+        globals: () => [RVIS_GLSL],
+        statements: ({ inputs, outputs }) => unindentLines(`
+              vec3 brushNormal = normalize(${inputs.brushNormal});
+              vec3 delta = ${inputs.gsplat}.center - ${inputs.center};
+              float signedDepth = dot(delta, brushNormal);
+              float tangentDistance = length(
+                delta - brushNormal * signedDepth
+              );
+              float radialWeight = 1.0 - smoothstep(
+                ${inputs.radius} * 0.72,
+                ${inputs.radius},
+                tangentDistance
+              );
+              float weight = radialWeight;
+              if (weight > 0.0 && ${inputs.thicknessFilterEnabled}) {
+                weight *= 1.0 - smoothstep(
+                  ${inputs.thickness} * 0.45,
+                  ${inputs.thickness},
+                  abs(signedDepth)
+                );
+              }
+              if (weight > 0.0 && ${inputs.normalFilterEnabled}) {
+                float alignment = abs(dot(
+                  normalize(${inputs.splatNormal}),
+                  brushNormal
+                ));
+                weight *= smoothstep(
+                  ${inputs.normalCosine},
+                  min(1.0, ${inputs.normalCosine} + 0.2),
+                  alignment
+                );
+              }
+              if (weight > 0.0 && ${inputs.visibilityFilterEnabled}) {
+                vec3 toCamera = normalize(
+                  ${inputs.cameraPosition} - ${inputs.gsplat}.center
+                );
+                float visibility = evaluateRvisSH(
+                  ${inputs.coefficients},
+                  ${inputs.textureWidth},
+                  ${inputs.index},
+                  toCamera
+                );
+                weight *= smoothstep(
+                  ${inputs.visibilityThreshold},
+                  min(
+                    1.0,
+                    ${inputs.visibilityThreshold} + ${inputs.visibilityFeather}
+                  ),
+                  visibility
+                );
+              }
+              weight = clamp(weight * ${inputs.opacity}, 0.0, 1.0);
+
+              float normalizedExposure = clamp(
+                ${inputs.currentBrightness}.r
+                  - ${inputs.currentBrightness}.g,
+                -1.0,
+                1.0
+              );
+              float targetExposure = clamp(
+                ${inputs.direction} * ${inputs.exposure} * 0.5,
+                -1.0,
+                1.0
+              );
+              if (${inputs.erasing}) {
+                normalizedExposure = mix(
+                  normalizedExposure,
+                  0.0,
+                  weight
+                );
+              } else if (weight > 0.0) {
+                normalizedExposure = mix(
+                  normalizedExposure,
+                  targetExposure,
+                  weight
+                );
+              }
+              ${outputs.rgba8} = vec4(
+                max(normalizedExposure, 0.0),
+                max(-normalizedExposure, 0.0),
+                0.0,
+                0.0
+              );
+            `)
+      });
+      return {
+        rgba8: shader.apply({
+          gsplat,
+          splatNormal,
+          index,
+          currentBrightness,
+          erasing: this.erasingUniform,
+          center: this.centerUniform,
+          brushNormal: this.normalUniform,
+          cameraPosition: this.cameraPositionUniform,
+          radius: this.radiusUniform,
+          thickness: this.thicknessUniform,
+          opacity: this.opacityUniform,
+          thicknessFilterEnabled: this.thicknessFilterEnabledUniform,
+          normalFilterEnabled: this.normalFilterEnabledUniform,
+          visibilityFilterEnabled: this.visibilityFilterEnabledUniform,
+          exposure: this.exposureUniform,
+          direction: this.brightnessDirectionUniform,
+          visibilityThreshold: this.visibilityThresholdUniform,
+          visibilityFeather: this.visibilityFeatherUniform,
+          normalCosine: this.normalCosineUniform,
+          coefficients: this.lighting.coefficientsDyno,
+          textureWidth: this.lighting.textureWidthDyno
+        }).rgba8
+      };
+    });
+  }
   createModifier() {
     return dynoBlock(
       { gsplat: Gsplat },
@@ -19044,10 +19249,15 @@ class RvisSurfacePainter {
         if (!gsplat) throw new Error("Missing Gsplat input");
         const sourceIndex = splitGsplat(gsplat).outputs.index;
         const paint = readRgbaArray(this.paintMapUniform, sourceIndex);
+        const brightness = readRgbaArray(
+          this.brightnessMapUniform,
+          sourceIndex
+        );
         const shader = new Dyno({
           inTypes: {
             gsplat: Gsplat,
             paint: "vec4",
+            brightness: "vec4",
             colorMode: "int"
           },
           outTypes: { gsplat: Gsplat },
@@ -19055,7 +19265,11 @@ class RvisSurfacePainter {
               ${outputs.gsplat} = ${inputs.gsplat};
               if (${inputs.paint}.a > 0.0) {
                 vec3 targetColor = ${inputs.paint}.rgb;
-                if (${inputs.colorMode} == ${1}) {
+                if (
+                  ${inputs.colorMode} == ${1}
+                    || ${inputs.colorMode}
+                      == ${2}
+                ) {
                   const vec3 luminanceWeights =
                     vec3(0.2126, 0.7152, 0.0722);
                   float sourceLuminance = dot(
@@ -19070,6 +19284,20 @@ class RvisSurfacePainter {
                     targetColor = ${inputs.paint}.rgb
                       * (sourceLuminance / paintLuminance);
                   }
+                  if (
+                    ${inputs.colorMode}
+                      == ${2}
+                  ) {
+                    // Use linear middle gray as zero exposure. Dark selected
+                    // colors reduce exposure and bright colors lift it while
+                    // preserving the source luminance variation.
+                    float colorExposure = clamp(
+                      log2(max(paintLuminance, 0.000001) / 0.18),
+                      -2.0,
+                      2.0
+                    );
+                    targetColor *= exp2(colorExposure);
+                  }
                   targetColor = clamp(targetColor, 0.0, 1.0);
                 }
                 ${outputs.gsplat}.rgba.rgb = mix(
@@ -19078,12 +19306,25 @@ class RvisSurfacePainter {
                   ${inputs.paint}.a
                 );
               }
+              float exposure = clamp(
+                (${inputs.brightness}.r - ${inputs.brightness}.g) * 2.0,
+                -2.0,
+                2.0
+              );
+              if (abs(exposure) > 0.000001) {
+                ${outputs.gsplat}.rgba.rgb = clamp(
+                  ${outputs.gsplat}.rgba.rgb * exp2(exposure),
+                  0.0,
+                  1.0
+                );
+              }
             `)
         });
         return {
           gsplat: shader.apply({
             gsplat,
             paint,
+            brightness,
             colorMode: this.colorModeUniform
           }).gsplat
         };

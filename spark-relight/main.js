@@ -702,6 +702,7 @@ const inputs = {
   paintColor: document.getElementById("paint-color"),
   brushRoughness: document.getElementById("brush-roughness"),
   brushSpecular: document.getElementById("brush-specular"),
+  brushExposure: document.getElementById("brush-exposure"),
   brushRadius: document.getElementById("brush-radius"),
   brushThickness: document.getElementById("brush-thickness"),
   brushOpacity: document.getElementById("brush-opacity"),
@@ -719,6 +720,7 @@ const outputs = {
   mode: document.getElementById("mode-value"),
   brushRoughness: document.getElementById("brush-roughness-value"),
   brushSpecular: document.getElementById("brush-specular-value"),
+  brushExposure: document.getElementById("brush-exposure-value"),
   brushRadius: document.getElementById("brush-radius-value"),
   brushThickness: document.getElementById("brush-thickness-value"),
   brushOpacity: document.getElementById("brush-opacity-value"),
@@ -736,12 +738,16 @@ const modeDescriptions = [
 const paintDescriptions = [
   "Paints a non-destructive per-Gaussian color layer before lighting.",
   "Adds a per-Gaussian clearcoat with painted roughness and interactive highlights.",
+  "Raises per-Gaussian albedo exposure while preserving texture and reconstructed detail.",
+  "Lowers per-Gaussian albedo exposure while preserving texture and reconstructed detail.",
 ];
 const colorPaintDescriptions = {
   [RvisSurfaceColorMode.SOLID]:
     "Applies the selected color uniformly for graphic, flat coverage.",
   [RvisSurfaceColorMode.TINT]:
     "Colorizes the surface while preserving reconstructed luminance and SH detail.",
+  [RvisSurfaceColorMode.TINT_EXPOSURE]:
+    "Preserves reconstructed luminance variation, then derives −2 to +2 EV from the selected color around linear middle gray.",
 };
 
 function sphericalDirection(azimuthDegrees, elevationDegrees) {
@@ -1275,7 +1281,11 @@ function updateBrushCursor(event, visible) {
     ? "#ffffff"
     : currentPaintMode === RvisSurfacePaintMode.MATERIAL
       ? "#f4b96a"
-      : inputs.paintColor.value;
+      : currentPaintMode === RvisSurfacePaintMode.LIGHTEN
+        ? "#fff1a8"
+        : currentPaintMode === RvisSurfacePaintMode.DARKEN
+          ? "#7198ff"
+          : inputs.paintColor.value;
 }
 
 function getActivePaintFilters() {
@@ -1302,6 +1312,13 @@ function updatePaintDescription() {
   paintDescription.textContent = `${modeDescription} ${filterDescription}`;
 }
 
+function updateBrushExposureOutput() {
+  const sign = currentPaintMode === RvisSurfacePaintMode.DARKEN ? "−" : "+";
+  outputs.brushExposure.value = `${sign}${Number(
+    inputs.brushExposure.value,
+  ).toFixed(1)} EV`;
+}
+
 function updateSurfacePainterControls() {
   outputs.brushRoughness.value = `${Math.round(
     Number(inputs.brushRoughness.value) * 100,
@@ -1309,6 +1326,7 @@ function updateSurfacePainterControls() {
   outputs.brushSpecular.value = `${Math.round(
     Number(inputs.brushSpecular.value) * 100,
   )}%`;
+  updateBrushExposureOutput();
   outputs.brushRadius.value = `${(
     Number(inputs.brushRadius.value) * 100
   ).toFixed(1)}%`;
@@ -1350,6 +1368,7 @@ function updateSurfacePainterControls() {
   surfacePainter.color.set(inputs.paintColor.value);
   surfacePainter.roughness = Number(inputs.brushRoughness.value);
   surfacePainter.specular = Number(inputs.brushSpecular.value);
+  surfacePainter.exposure = Number(inputs.brushExposure.value);
   surfacePainter.radius = modelRadius * Number(inputs.brushRadius.value);
   surfacePainter.thickness =
     surfacePainter.radius * Number(inputs.brushThickness.value);
@@ -1461,7 +1480,8 @@ function setPaintColorMode(mode) {
   const nextMode = Number(mode);
   if (
     nextMode !== RvisSurfaceColorMode.SOLID &&
-    nextMode !== RvisSurfaceColorMode.TINT
+    nextMode !== RvisSurfaceColorMode.TINT &&
+    nextMode !== RvisSurfaceColorMode.TINT_EXPOSURE
   ) {
     return;
   }
@@ -1477,8 +1497,22 @@ function setPaintColorMode(mode) {
 }
 
 function setPaintMode(mode) {
-  currentPaintMode = Number(mode);
+  const nextMode = Number(mode);
+  if (
+    nextMode !== RvisSurfacePaintMode.COLOR &&
+    nextMode !== RvisSurfacePaintMode.MATERIAL &&
+    nextMode !== RvisSurfacePaintMode.LIGHTEN &&
+    nextMode !== RvisSurfacePaintMode.DARKEN
+  ) {
+    return;
+  }
+  currentPaintMode = nextMode;
+  updateBrushExposureOutput();
+  const colorMode = currentPaintMode === RvisSurfacePaintMode.COLOR;
   const materialMode = currentPaintMode === RvisSurfacePaintMode.MATERIAL;
+  const brightnessMode =
+    currentPaintMode === RvisSurfacePaintMode.LIGHTEN ||
+    currentPaintMode === RvisSurfacePaintMode.DARKEN;
   for (const button of paintModeControl.querySelectorAll("button")) {
     button.setAttribute(
       "aria-pressed",
@@ -1486,10 +1520,13 @@ function setPaintMode(mode) {
     );
   }
   for (const button of paintColorModeControl.querySelectorAll("button")) {
-    button.disabled = materialMode;
+    button.disabled = !colorMode;
   }
   for (const element of document.querySelectorAll(".color-paint-only")) {
-    element.hidden = materialMode;
+    element.hidden = !colorMode;
+  }
+  for (const element of document.querySelectorAll(".brightness-paint-only")) {
+    element.hidden = !brightnessMode;
   }
   for (const element of document.querySelectorAll(".material-paint-only")) {
     element.hidden = !materialMode;
@@ -1502,10 +1539,31 @@ function setPaintMode(mode) {
   updatePaintInteractionCopy();
 }
 
+function getPaintTargetLabel() {
+  if (currentPaintMode === RvisSurfacePaintMode.MATERIAL) return "material";
+  if (
+    currentPaintMode === RvisSurfacePaintMode.LIGHTEN ||
+    currentPaintMode === RvisSurfacePaintMode.DARKEN
+  ) {
+    return "exposure";
+  }
+  return "color";
+}
+
+function getPaintActionLabel() {
+  if (currentPaintMode === RvisSurfacePaintMode.LIGHTEN) {
+    return "lighten surface";
+  }
+  if (currentPaintMode === RvisSurfacePaintMode.DARKEN) {
+    return "darken surface";
+  }
+  return `paint ${getPaintTargetLabel()}`;
+}
+
 function updatePaintInteractionCopy() {
   const filterLabel = getPaintFilterLabel();
-  const materialMode = currentPaintMode === RvisSurfacePaintMode.MATERIAL;
-  const targetLabel = materialMode ? "material" : "color";
+  const targetLabel = getPaintTargetLabel();
+  const actionLabel = getPaintActionLabel();
   const toolLabel =
     currentPaintTool === PaintInteractionTool.BRUSH
       ? "Brush"
@@ -1521,11 +1579,11 @@ function updatePaintInteractionCopy() {
   } else if (currentPaintTool === PaintInteractionTool.ERASER) {
     paintHelp.textContent = `Drag to restore source ${targetLabel} · Filters: ${filterLabel}.`;
   } else {
-    paintHelp.textContent = `Drag to paint ${targetLabel} · Filters: ${filterLabel}.`;
+    paintHelp.textContent = `Drag to ${actionLabel} · Filters: ${filterLabel}.`;
   }
 
   viewportHint.textContent = paintEnabled
-    ? `${toolLabel} ${targetLabel} · Filters: ${filterLabel} · V returns to view`
+    ? `${toolLabel} · ${actionLabel} · Filters: ${filterLabel} · V returns to view`
     : currentLightType === RvisLightType.POINT
       ? "B brush · X eraser · V view · Select/drag light · WASD/QE move"
       : "B brush · X eraser · V view · WASD/QE move · Arrows look · 1–4 mode";
@@ -1618,10 +1676,10 @@ function prepareBrushStamp(event) {
   });
   updateBrushCursor(event, true);
   const action =
-    currentPaintTool === PaintInteractionTool.ERASER ? "erase" : "paint";
-  const target =
-    currentPaintMode === RvisSurfacePaintMode.MATERIAL ? "material" : "color";
-  paintHelp.textContent = `Surface ${hit.splatIndex.toLocaleString()} · ${action} ${target} · filters: ${getPaintFilterLabel()}`;
+    currentPaintTool === PaintInteractionTool.ERASER
+      ? `erase ${getPaintTargetLabel()}`
+      : getPaintActionLabel();
+  paintHelp.textContent = `Surface ${hit.splatIndex.toLocaleString()} · ${action} · filters: ${getPaintFilterLabel()}`;
   return true;
 }
 
@@ -1732,6 +1790,7 @@ function bindSurfacePainting() {
     inputs.paintColor,
     inputs.brushRoughness,
     inputs.brushSpecular,
+    inputs.brushExposure,
     inputs.brushRadius,
     inputs.brushThickness,
     inputs.brushOpacity,
@@ -2347,6 +2406,7 @@ function createSurfacePainter() {
     color: inputs.paintColor.value,
     roughness: Number(inputs.brushRoughness.value),
     specular: Number(inputs.brushSpecular.value),
+    exposure: Number(inputs.brushExposure.value),
     mode: currentPaintMode,
     colorMode: currentPaintColorMode,
   });
