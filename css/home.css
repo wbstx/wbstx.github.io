@@ -183,7 +183,6 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   gap: 32px;
   line-height: 1.85;
 }
-.page-kicker { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; }
 .tiny-label { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: #a0b4bf; }
 .page-content { flex: 1; min-height: 0; }
 .page:focus, .page-content:focus { outline: none; }
