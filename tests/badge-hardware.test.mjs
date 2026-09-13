@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CatmullRomCurve3, Euler, Quaternion, Vector3 } from 'three';
-import { CARD_EYELET, HARDWARE_ATTACHMENT, STRAP_SEAT, SWIVEL_PIVOT, createBadgeHardware, updateBadgeHardware } from '../js/home/hardware.js';
-import { STRAP_HALF_WIDTH, writeRibbonPositions } from '../js/home/lanyard.js';
+import { CARD_EYELET, COIL_SEAT, HARDWARE_ATTACHMENT, STRAP_SEAT, SWIVEL_PIVOT, createBadgeHardware, updateBadgeHardware } from '../js/home/hardware.js';
+import { createCoilGeometry } from '../js/home/spring-coil.js';
 
 test('the continuous hook crosses the eyelet, clearing the card on both faces', () => {
   const { hook } = createBadgeHardware();
@@ -35,15 +35,15 @@ test('the continuous hook crosses the eyelet, clearing the card on both faces', 
   assert.equal(crossings, 1, 'One continuous metal section threads the hole');
 });
 
-test('flipping around the swivel leaves the D-ring and ribbon untwisted', () => {
+test('flipping around the swivel leaves the D-ring and spring coil untwisted', () => {
   const hardware = createBadgeHardware();
   const pivot = new Vector3(.4, .3, -.2);
   const up = new Vector3(0, 1, 0);
-  const segments = 48;
-  const positions = new Float32Array((segments + 1) * 6);
+  const coil = createCoilGeometry({ segments: 96, radialSegments: 6 });
+  const positions = coil.geometry.attributes.position.array;
   for (const tilt of [[0, 0], [.25, -.5], [-.45, .35], [.8, -.7]]) {
     const swing = new Quaternion().setFromEuler(new Euler(tilt[0], 0, tilt[1]));
-    let referenceRotation, referenceRibbon;
+    let referenceRotation, referenceCoil;
     for (let step = 0; step <= 72; step++) {
       const twist = new Quaternion().setFromAxisAngle(up, step * Math.PI / 36);
       const cardRotation = swing.clone().multiply(twist);
@@ -58,20 +58,20 @@ test('flipping around the swivel leaves the D-ring and ribbon untwisted', () => 
       assert(1 - Math.abs(referenceRotation.dot(suspension.quaternion)) < 1e-12,
         'Card twist leaked into the D-ring');
 
+      const coilSocket = COIL_SEAT.clone().applyQuaternion(suspension.quaternion).add(suspension.position);
       const curve = new CatmullRomCurve3([
         new Vector3(0, 4.98, 0), new Vector3(0, 4.42, 0),
         socket.clone().add(new Vector3(0, .7, 0)),
-        new Vector3(0, .18, 0).applyQuaternion(suspension.quaternion).add(socket), socket,
+        new Vector3(0, .1, 0).applyQuaternion(suspension.quaternion).add(coilSocket), coilSocket,
       ]);
-      writeRibbonPositions(curve, suspension.quaternion, positions, segments);
-      if (!referenceRibbon) referenceRibbon = positions.slice();
-      for (let i = 0; i < positions.length; i++) assert(Math.abs(positions[i] - referenceRibbon[i]) < 1e-6);
-      for (let i = 0; i <= segments; i++) {
-        const left = new Vector3().fromArray(positions, i * 6);
-        const right = new Vector3().fromArray(positions, i * 6 + 3);
-        assert(Math.abs(left.distanceTo(right) - STRAP_HALF_WIDTH * 2) < 1e-6);
-        if (i === segments) assert(left.add(right).multiplyScalar(.5).distanceTo(socket) < 1e-6);
-      }
+      coil.update(curve);
+      if (!referenceCoil) referenceCoil = positions.slice();
+      for (let i = 0; i < positions.length; i++) assert(Math.abs(positions[i] - referenceCoil[i]) < 1e-6);
+      const endOffset = 96 * 7 * 3;
+      const endCenter = new Vector3().fromArray(positions, endOffset)
+        .add(new Vector3().fromArray(positions, endOffset + 3 * 3)).multiplyScalar(.5);
+      assert(endCenter.distanceTo(coilSocket) < 1e-6, 'The spring stays seated in its terminal');
     }
   }
+  coil.geometry.dispose();
 });

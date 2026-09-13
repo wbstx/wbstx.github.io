@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createCardTextures, createStrapTexture } from './card-textures.js';
-import { BADGE_ATTACHMENT, writeRibbonPositions } from './lanyard.js';
-import { CARD_EYELET, STRAP_SEAT, createBadgeHardware, updateBadgeHardware } from './hardware.js';
+import { createCardTextures } from './card-textures.js';
+import { BADGE_ATTACHMENT } from './lanyard.js';
+import { CARD_EYELET, COIL_SEAT, createBadgeHardware, updateBadgeHardware } from './hardware.js';
 import { ENTRANCE_DURATION, startBadgeEntrance, updateEntranceDamping } from './entrance.js';
 import { frameBadgeCamera } from './badge-viewport.js';
+import { createFlipPeek } from './flip-peek.js';
+import { createSpringRibbon, RIBBON_LENGTH } from './spring-ribbon.js';
+import { createCoilGeometry, createCoilMaterial } from './spring-coil.js';
+import { BADGE_PHYSICS_STEP, BADGE_SOLVER_ITERATIONS, followBadgeDrag, releaseBadgeMotion, updateBadgeYaw } from './badge-motion.js';
 
 const stage = document.querySelector('#badge-stage');
 const mount = document.querySelector('#badge-canvas');
@@ -94,8 +98,8 @@ async function init() {
   ]);
   await RAPIER.init();
   const world = new RAPIER.World({ x: 0, y: -23, z: 0 });
-  world.numSolverIterations = 12;
-  world.timestep = 1 / 60;
+  world.numSolverIterations = BADGE_SOLVER_ITERATIONS;
+  world.timestep = BADGE_PHYSICS_STEP;
 
   const width = 2.48, height = 3.48;
   const shape = roundedShape(width, height, .075, true);
@@ -155,23 +159,13 @@ async function init() {
   // The strap-side housing rotates independently around the swivel axis.
   scene.add(hardware.suspension);
 
-  // The strap is a dynamic ribbon following three constrained rigid bodies.
-  // Its geometry is updated in place, avoiding allocations of GPU resources.
-  const segments = 48;
-  const ribbonGeometry = new THREE.BufferGeometry();
-  const ribbonPositions = new Float32Array((segments + 1) * 2 * 3);
-  const ribbonUV = new Float32Array((segments + 1) * 2 * 2);
-  const indices = [];
-  for (let i = 0; i <= segments; i++) {
-    ribbonUV.set([0, i / segments * 1.25, 1, i / segments * 1.25], i * 4);
-    if (i < segments) { const n = i * 2; indices.push(n, n + 1, n + 2, n + 1, n + 3, n + 2); }
-  }
-  ribbonGeometry.setAttribute('position', new THREE.BufferAttribute(ribbonPositions, 3).setUsage(THREE.DynamicDrawUsage));
-  ribbonGeometry.setAttribute('uv', new THREE.BufferAttribute(ribbonUV, 2));
-  ribbonGeometry.setIndex(indices);
-  const ribbon = new THREE.Mesh(ribbonGeometry, new THREE.MeshStandardMaterial({ map: createStrapTexture(renderer.capabilities.getMaxAnisotropy()), roughness: .93, metalness: .08, side: THREE.DoubleSide }));
-  ribbon.frustumCulled = false;
-  scene.add(ribbon);
+  // An actual round-wire helix follows the damped spring chain. The number of
+  // turns stays fixed while the spacing opens and closes with its extension.
+  const coilGeometry = createCoilGeometry();
+  const coil = new THREE.Mesh(coilGeometry.geometry, createCoilMaterial());
+  coil.name = 'Black helical suspension spring';
+  coil.frustumCulled = false;
+  scene.add(coil);
 
   const shadowCanvas = document.createElement('canvas');
   shadowCanvas.width = shadowCanvas.height = 128;
@@ -186,19 +180,12 @@ async function init() {
   scene.add(shadow);
 
   const origin = { x: 0, y: 0, z: 0 };
-  const segmentLength = .56;
   const anchorPosition = { x: 0, y: 4.98, z: 0 };
-  const fixed = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, 4.98, 0));
-  const bodies = [1, 2, 3].map(i => world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 4.98 - i * segmentLength, 0).setAdditionalMass(.14).setLinearDamping(4).setAngularDamping(4)));
-  let parent = fixed;
-  bodies.forEach(body => {
-    world.createImpulseJoint(RAPIER.JointData.rope(segmentLength, origin, origin), parent, body, true);
-    parent = body;
-  });
-  const rest = { x: 0, y: anchorPosition.y - 3 * segmentLength - BADGE_ATTACHMENT.y, z: 0 };
+  const rest = { x: 0, y: anchorPosition.y - RIBBON_LENGTH - BADGE_ATTACHMENT.y, z: 0 };
   const rigidCard = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(rest.x, rest.y, rest.z).setLinearDamping(3.2).setAngularDamping(4.5));
   world.createCollider(RAPIER.ColliderDesc.cuboid(width / 2, height / 2, .045).setMass(1).setCollisionGroups(0), rigidCard);
-  world.createImpulseJoint(RAPIER.JointData.spherical(origin, BADGE_ATTACHMENT), bodies[2], rigidCard, true);
+  const springRibbon = createSpringRibbon({ RAPIER, world, anchor: anchorPosition, card: rigidCard, attachment: BADGE_ATTACHMENT });
+  const { bodies, segmentLength } = springRibbon;
 
   let back = false;
   let pointerId = null;
@@ -218,10 +205,11 @@ async function init() {
   const dragTarget = new THREE.Vector3();
   const quat = new THREE.Quaternion();
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-  const curve = new THREE.CatmullRomCurve3(Array.from({ length: 5 }, () => new THREE.Vector3()));
+  const curve = new THREE.CatmullRomCurve3(Array.from({ length: bodies.length + 2 }, () => new THREE.Vector3()));
   const socket = new THREE.Vector3();
   const socketApproach = new THREE.Vector3();
   let cardClickPointer = null;
+  const flipPeek = createFlipPeek({ disabled: motionPreference.matches });
 
   function setHover(hovered) {
     canvas.classList.toggle('is-hovered', hovered);
@@ -265,8 +253,8 @@ async function init() {
     hero.classList.remove('is-badge-dragging');
     setHover(false);
     rigidCard.setBodyType(RAPIER.RigidBodyType.Dynamic, true);
-    const velocity = rigidCard.linvel();
-    rigidCard.setLinvel({ x: THREE.MathUtils.clamp(velocity.x, -8, 8), y: THREE.MathUtils.clamp(velocity.y, -8, 8), z: THREE.MathUtils.clamp(velocity.z, -3, 3) }, true);
+    const spatialThrow = moved && !cancelled && !motionPreference.matches;
+    releaseBadgeMotion(rigidCard, spatialThrow);
     if (motionPreference.matches) resetPosition();
     if (!cancelled && !moved) flip(false);
 
@@ -284,14 +272,11 @@ async function init() {
     rigidCard.setLinvel(origin, true);
     rigidCard.setAngvel(origin, true);
     rigidCard.setRotation(quat.setFromEuler(euler.set(0, back ? Math.PI : -.08, 0)), true);
-    bodies.forEach((body, i) => {
-      body.setTranslation({ x: 0, y: 4.98 - (i + 1) * segmentLength, z: 0 }, true);
-      body.setLinvel(origin, true);
-      body.setAngvel(origin, true);
-    });
+    springRibbon.reset();
   }
 
   function flip(instant = false) {
+    flipPeek.cancel();
     stopEntrance();
     back = !back;
     canvas.setAttribute('aria-pressed', String(back));
@@ -309,6 +294,7 @@ async function init() {
     cardClickPointer = null;
     const hit = cardHit(event);
     if (!hit) return;
+    flipPeek.cancel();
     stopEntrance();
     event.preventDefault();
     event.stopPropagation();
@@ -353,7 +339,7 @@ async function init() {
   canvas.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); flip(true); }
     if (event.key === 'Escape') endDrag(true);
-    if (event.key.toLowerCase() === 'r') { event.preventDefault(); endDrag(true); resetPosition(); }
+    if (event.key.toLowerCase() === 'r') { event.preventDefault(); flipPeek.cancel(); endDrag(true); resetPosition(); }
   });
 
   function resize() {
@@ -377,17 +363,14 @@ async function init() {
     card.quaternion.copy(rigidCard.rotation());
     updateBadgeHardware(hardware, card.position, card.quaternion);
     curve.points[0].copy(anchorPosition);
-    curve.points[1].copy(bodies[0].translation());
-    curve.points[2].copy(bodies[1].translation());
-    // Finish on the D-ring's actual strap seat, using its independent frame.
+    for (let i = 0; i < bodies.length - 1; i++) curve.points[i + 1].copy(bodies[i].translation());
+    // Finish inside the black terminal above the independent D-ring.
     const suspension = hardware.suspension;
-    socket.copy(STRAP_SEAT).applyQuaternion(suspension.quaternion).add(suspension.position);
-    socketApproach.set(0, .18, 0).applyQuaternion(suspension.quaternion).add(socket);
-    curve.points[3].copy(socketApproach);
-    curve.points[4].copy(socket);
-    writeRibbonPositions(curve, suspension.quaternion, ribbonPositions, segments);
-    ribbonGeometry.attributes.position.needsUpdate = true;
-    ribbonGeometry.computeVertexNormals();
+    socket.copy(COIL_SEAT).applyQuaternion(suspension.quaternion).add(suspension.position);
+    socketApproach.set(0, .1, 0).applyQuaternion(suspension.quaternion).add(socket);
+    curve.points[bodies.length].copy(socketApproach);
+    curve.points[bodies.length + 1].copy(socket);
+    coilGeometry.update(curve);
     shadow.position.x = card.position.x * .55 + .12;
     shadow.material.opacity = THREE.MathUtils.clamp(.5 - (card.position.y - rest.y) * .16, .12, .5);
     renderer.render(scene, camera);
@@ -399,23 +382,27 @@ async function init() {
     const delta = previousTime ? Math.min((time - previousTime) / 1000, .05) : 1 / 60;
     previousTime = time;
     accumulator += delta;
-    while (accumulator >= 1 / 60) {
+    while (accumulator >= BADGE_PHYSICS_STEP) {
       if (entranceElapsed !== null) {
-        entranceElapsed += 1 / 60;
+        entranceElapsed += BADGE_PHYSICS_STEP;
         updateEntranceDamping(rigidCard, entranceElapsed);
         if (entranceElapsed >= ENTRANCE_DURATION) stopEntrance();
       }
-      if (pointerId !== null) rigidCard.setNextKinematicTranslation(dragTarget);
+      if (pointerId !== null) {
+        if (motionPreference.matches) rigidCard.setNextKinematicTranslation(dragTarget);
+        else followBadgeDrag(rigidCard, dragTarget);
+      }
       else if (!motionPreference.matches) {
-        quat.copy(rigidCard.rotation());
-        euler.setFromQuaternion(quat, 'YXZ');
-        const targetYaw = back ? Math.PI - .08 : -.08;
-        const error = Math.atan2(Math.sin(targetYaw - euler.y), Math.cos(targetYaw - euler.y));
         const velocity = rigidCard.angvel();
-        if (Math.abs(error) > .005 || Math.abs(velocity.y) > .01) rigidCard.setAngvel({ x: velocity.x, y: velocity.y * .94 + error * .23, z: velocity.z }, true);
+        const movement = rigidCard.linvel();
+        const settled = entranceElapsed === null && !back
+          && Math.hypot(movement.x, movement.y, movement.z) < .3
+          && Math.hypot(velocity.x, velocity.y, velocity.z) < .45;
+        const peek = flipPeek.step(BADGE_PHYSICS_STEP, settled);
+        updateBadgeYaw(rigidCard, { back, peek });
       }
       if (!motionPreference.matches || pointerId !== null) world.step();
-      accumulator -= 1 / 60;
+      accumulator -= BADGE_PHYSICS_STEP;
     }
     draw();
     frame = requestAnimationFrame(animate);
@@ -437,10 +424,11 @@ async function init() {
     else resume();
   });
   window.addEventListener('blur', () => endDrag(true));
-  motionPreference.addEventListener('change', () => { endDrag(true); resetPosition(); });
+  motionPreference.addEventListener('change', () => { flipPeek.cancel(); endDrag(true); resetPosition(); });
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
     stopped = true;
+    flipPeek.cancel();
     endDrag(true);
     cancelAnimationFrame(frame);
     showFallback();

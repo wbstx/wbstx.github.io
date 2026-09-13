@@ -53,14 +53,6 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   padding: 0 6%;
   overflow: hidden;
 }
-.hero::before {
-  position: absolute;
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  background: url("/images/home/field-lines.svg") center / cover;
-  opacity: .10;
-}
 .hero-copy {
   position: relative;
   z-index: 2;
@@ -79,13 +71,6 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
 .hero-contact { display: inline-flex; align-items: center; gap: 18px; font-size: 12px; color: #b7c6ce; }
 .badge-column { position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .badge-stage { position: relative; height: clamp(560px, 100svh, 900px); isolation: isolate; }
-.badge-stage::before {
-  position: absolute;
-  content: "";
-  inset: 12% -8% 0;
-  background: radial-gradient(ellipse at 52% 55%, #40464966 0%, #30373930 31%, #15171800 67%);
-  z-index: -1;
-}
 .badge-canvas { position: absolute; inset: 0; z-index: 2; }
 .badge-canvas canvas {
   width: 100%;
@@ -202,8 +187,42 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
 .tiny-label { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: #a0b4bf; }
 .page-content { flex: 1; min-height: 0; }
 .page:focus, .page-content:focus { outline: none; }
-.biography-content { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 8%; }
-.biography-content h2 { margin: 0; font-size: clamp(40px, 5vw, 72px); font-weight: 400; letter-spacing: -.045em; line-height: 1.14; }
+.biography-page { --biography-inset: max(8vw, calc((100vw - 1200px) / 2)); overflow: clip; }
+.biography-content { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); align-items: center; gap: 7%; }
+.biography-content h2 {
+  position: absolute;
+  top: 35%;
+  left: 58%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  color: #e8e9e4;
+  font-size: clamp(44px, min(6vw, 10svh), 88px);
+  font-weight: 400;
+  letter-spacing: -.06em;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 2px 24px #00000099;
+}
+.biography-visual {
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100% + var(--biography-inset)), 112svh);
+  margin-left: calc(-1 * var(--biography-inset));
+  min-width: 0;
+  transform: translateY(clamp(28px, 6svh, 72px));
+}
+.biography-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  transform: translateY(clamp(-28px, -2.7svh, -12px));
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.biography-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .biography-copy { padding: 24px 0; font-size: 16px; }
 .biography-copy p { color: #a7b4bc; margin: 24px 0 0; }
 .biography-copy strong { color: #d9e0e3; font-weight: 500; }
@@ -231,7 +250,6 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
 .paper strong { color: inherit; font-weight: 500; }
 .work-copy > strong { color: #becbd2; font-weight: 500; }
 .superhighlight { display: inline-block; margin-left: 6px; padding: 0 7px; border: 1px solid #425965; color: #c8deeb; font-size: 10px; line-height: 1.8; }
-.site-footer { display: flex; flex-shrink: 0; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 20px; font-size: 11px; color: #96a8b4; }
 html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .is-paged #main { height: 100dvh; overflow-y: hidden; scroll-snap-type: y mandatory; scrollbar-width: none; overflow-anchor: none; overscroll-behavior: none; touch-action: pan-y pinch-zoom; }
 .is-paged #main::-webkit-scrollbar { display: none; }
@@ -247,20 +265,12 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
 
 
 @media (hover: hover) and (pointer: fine) {
-  .hero-copy a:hover, .site-footer a:hover, .research a:hover { color: #fff; }
+  .hero-copy a:hover, .research a:hover { color: #fff; }
 }
 @media (min-width: 901px) {
   .hero { max-width: none; overflow: visible; isolation: isolate; }
-  .hero::after {
-    position: absolute;
-    content: "";
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(ellipse at 72% 55%, #40464966 0%, #30373930 25%, #15171800 55%);
-  }
   .badge-column { position: static; }
   .badge-stage { position: absolute; inset: 0; height: 100%; z-index: 3; pointer-events: none; }
-  .badge-stage::before { display: none; }
   .badge-fallback { left: 42%; }
   .hero.is-badge-hovered, .hero.is-badge-hovered a { cursor: grab; }
   .hero.is-badge-dragging, .hero.is-badge-dragging a { cursor: grabbing; }
@@ -285,9 +295,11 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .social-links { justify-content: center; gap: 14px; margin: 12px 0 0; }
 
   .research { padding: 24px 7% 32px; gap: 24px; }
+  .biography-page { --biography-inset: 7vw; }
   .tiny-label { font-size: 9px; }
   .biography-content { display: flex; flex-direction: column; justify-content: safe center; align-items: stretch; gap: 30px; }
-  .biography-content h2 { font-size: clamp(36px, 8vw, 60px); }
+  .biography-content h2 { font-size: clamp(32px, 11vw, 58px); }
+  .biography-visual { width: min(92vw, 640px, 58svh); transform: none; }
   .biography-copy { font-size: 14px; padding: 0; }
   .biography-copy p { margin-top: 14px; }
   .publication-list { padding: 0 10px 0 0; border-left: 0; border-top: 1px solid var(--line); }
@@ -308,7 +320,6 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .work-media img { max-height: 280px; }
   .work-copy { font-size: 12px; line-height: 1.75; padding: 0; width: 100%; }
   .work-title { font-size: clamp(18px, 4.8vw, 26px); line-height: 1.35; margin-bottom: 16px; }
-  .site-footer { font-size: 10px; flex-wrap: wrap; gap: 10px; padding-top: 16px; }
   .is-paged .hero { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   .is-paged .badge-column { flex: 1; min-height: 0; }
   .is-paged .hero-copy { flex-shrink: 0; }
@@ -328,7 +339,8 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
 }
 @media (max-width: 900px) and (max-height: 650px) {
   .biography-content { gap: 16px; }
-  .biography-content h2 { font-size: 28px; }
+  .biography-content h2 { font-size: clamp(22px, 7vw, 36px); }
+  .biography-visual { width: min(82vw, 340px, 42svh); }
   .biography-copy { font-size: 12px; line-height: 1.65; }
   .biography-copy p { margin-top: 10px; }
   .is-paged .hero-name { font-size: 26px; }

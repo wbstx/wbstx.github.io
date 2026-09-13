@@ -1,11 +1,13 @@
 import * as THREE from 'three';
+import { createCoilMaterial } from './spring-coil.js';
 
 // Dimensions are in the card's local frame. The eyelet is shared with the
-// card cutout, and the folded strap seats on the D-ring's straight top bar.
+// card cutout. A black eye terminal links the spring to the D-ring's top bar.
 export const CARD_EYELET = { y: 1.52, radius: .077 };
 export const HARDWARE_ATTACHMENT = new THREE.Vector3(0, 2.84, 0);
 export const SWIVEL_PIVOT = new THREE.Vector3(0, 2.43, 0);
 export const STRAP_SEAT = HARDWARE_ATTACHMENT.clone().sub(SWIVEL_PIVOT);
+export const COIL_SEAT = STRAP_SEAT.clone().add(new THREE.Vector3(0, .107, 0));
 
 const up = new THREE.Vector3(0, 1, 0);
 const swivelAxis = new THREE.Vector3();
@@ -37,7 +39,7 @@ export function createBadgeHardware() {
   const nickel = new THREE.MeshPhysicalMaterial({ color: '#c8c3b6', metalness: .98, roughness: .23, clearcoat: .35, envMapIntensity: 1.8 });
   const brushed = new THREE.MeshStandardMaterial({ color: '#8c8a80', metalness: .9, roughness: .35, envMapIntensity: 1.5 });
 
-  // Flat-topped D-ring: the black strap folds over its horizontal bar.
+  // Flat-topped D-ring: the spring terminal loops around its horizontal bar.
   const path = new THREE.CurvePath();
   const v = (x, y) => new THREE.Vector3(x, y, 0);
   path.add(new THREE.LineCurve3(v(-.245, 2.84), v(.245, 2.84)));
@@ -95,15 +97,15 @@ export function createBadgeHardware() {
     eyelets.add(eyelet);
   }
 
-  const strapEnd = new THREE.Mesh(new THREE.BoxGeometry(.41, .17, .038), new THREE.MeshStandardMaterial({ color: '#161719', roughness: 1 }));
-  strapEnd.position.set(0, 2.84, .025);
-  upper.add(strapEnd);
-  // Two small stitches across the folded end, echoing the supplied hardware.
-  const thread = new THREE.MeshBasicMaterial({ color: '#5b6068' });
-  for (const y of [2.885, 2.90]) {
-    const seam = new THREE.Mesh(new THREE.BoxGeometry(.35, .006, .003), thread);
-    seam.position.set(0, y, .046);
-    upper.add(seam);
-  }
+  const black = createCoilMaterial();
+  const terminalEye = new THREE.Mesh(new THREE.TorusGeometry(.053, .015, 10, 32), black);
+  terminalEye.name = 'Black spring eye around D-ring';
+  terminalEye.rotation.y = Math.PI / 2;
+  terminalEye.position.set(0, 2.84, 0);
+  upper.add(terminalEye);
+  const terminal = new THREE.Mesh(new THREE.CylinderGeometry(.034, .034, .05, 20), black);
+  terminal.name = 'Black spring terminal';
+  terminal.position.set(0, 2.922, 0);
+  upper.add(terminal);
   return { hook, eyelets, suspension };
 }
