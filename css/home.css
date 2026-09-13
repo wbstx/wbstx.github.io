@@ -269,6 +269,7 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
 }
 @media (min-width: 901px) {
   .hero { max-width: none; overflow: visible; isolation: isolate; }
+  .hero-copy { margin-inline-start: clamp(48px, 8vw, 128px); }
   .badge-column { position: static; }
   .badge-stage { position: absolute; inset: 0; height: 100%; z-index: 3; pointer-events: none; }
   .badge-fallback { left: 42%; }
