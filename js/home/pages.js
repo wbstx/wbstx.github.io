@@ -64,21 +64,28 @@ function publicationArea(target) {
 document.addEventListener('wheel', event => {
   if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
   const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? main.clientHeight : 1);
-  const region = publicationArea(event.target) ? 'papers' : 'page';
-  const { preventDefault, direction } = routeWheel(delta, performance.now(), region, !!main.querySelector('.is-dragging'));
+  const readingArea = publicationArea(event.target);
+  const region = readingArea ? 'papers' : 'page';
+  const { preventDefault, direction } = routeWheel(delta, performance.now(), region, !!main.querySelector('.is-dragging'), readingArea?.scrollTop <= 1);
   if (preventDefault) event.preventDefault();
   if (direction) goTo(current + direction);
 }, { passive: false });
 
 document.addEventListener('touchstart', event => {
-  if (event.touches.length !== 1 || event.defaultPrevented || main.querySelector('.is-dragging') || publicationArea(event.target)) { touch = null; return; }
+  if (event.touches.length !== 1 || event.defaultPrevented || main.querySelector('.is-dragging')) { touch = null; return; }
+  const readingArea = publicationArea(event.target);
+  if (readingArea && readingArea.scrollTop > 1) { touch = null; return; }
   const point = event.touches[0];
-  touch = { x: point.clientX, y: point.clientY };
+  touch = { x: point.clientX, y: point.clientY, readingArea };
 }, { passive: true });
 document.addEventListener('touchmove', event => {
   if (!touch) return;
   if (event.touches.length !== 1 || event.defaultPrevented || main.querySelector('.is-dragging')) { touch = null; return; }
   const point = event.touches[0];
+  if (touch.readingArea && (point.clientY < touch.y || touch.readingArea.scrollTop > 1)) {
+    touch = null;
+    return;
+  }
   if (Math.abs(touch.y - point.clientY) > Math.abs(touch.x - point.clientX) && event.cancelable) event.preventDefault();
 }, { passive: false });
 document.addEventListener('touchend', event => {
@@ -86,7 +93,8 @@ document.addEventListener('touchend', event => {
   touch = null;
   if (!gesture || event.defaultPrevented || !event.changedTouches.length) return;
   const point = event.changedTouches[0];
-  const direction = swipeDirection(gesture.x - point.clientX, gesture.y - point.clientY);
+  const direction = swipeDirection(gesture.x - point.clientX, gesture.y - point.clientY, gesture.readingArea ? 64 : 48);
+  if (gesture.readingArea && direction !== -1) return;
   if (direction) goTo(current + direction);
 });
 document.addEventListener('touchcancel', () => { touch = null; });
@@ -102,6 +110,7 @@ document.addEventListener('keydown', event => {
   const readingArea = publicationArea(event.target);
   if (readingArea) {
     if (event.key === 'Home' || event.key === 'End') readingArea.scrollTop = event.key === 'Home' ? 0 : readingArea.scrollHeight;
+    else if (direction < 0 && readingArea.scrollTop <= 1) goTo(current - 1, true);
     else readingArea.scrollTop += direction * readingArea.clientHeight * .7;
     return;
   }

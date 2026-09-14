@@ -52,10 +52,12 @@ export function createWheelIntent({ threshold = 40, pause = 180, rearmAfter = 38
 
 // Keep a page-turn gesture's tail out of a paper list that moves under the
 // pointer. Only a new gesture may transfer ownership from the page to papers.
-export function createWheelRouter(options) {
+export function createWheelRouter({ edgeThreshold = 80, ...options } = {}) {
   const intent = createWheelIntent(options);
   let owner = null;
-  return (delta, time, region, blocked = false) => {
+  let exitAtTop = false;
+  let edgeDistance = 0;
+  return (delta, time, region, blocked = false, atTop = false) => {
     // Leaving the reading column remains immediately responsive.
     if (region === 'page' && owner === 'papers') {
       intent.reset();
@@ -63,9 +65,29 @@ export function createWheelRouter(options) {
     }
     const previousGesture = intent.gestureId;
     const direction = intent(delta, time, blocked);
-    if (owner === null || intent.gestureId !== previousGesture) owner = region;
-    if (blocked) owner = 'page';
+    if (owner === null || intent.gestureId !== previousGesture) {
+      owner = region;
+      // Arriving at the top partway through a reading gesture never exits.
+      exitAtTop = region === 'papers' && atTop && delta < 0;
+      edgeDistance = 0;
+    }
+    if (blocked) { owner = 'page'; exitAtTop = false; }
     const reading = owner === 'papers' && region === 'papers';
+    if (reading) {
+      if (!atTop || delta >= 0) { exitAtTop = false; edgeDistance = 0; }
+      if (atTop && delta < 0) {
+        if (exitAtTop) edgeDistance -= delta;
+        if (edgeDistance >= edgeThreshold) {
+          owner = 'page';
+          exitAtTop = false;
+          // The exit owns the rest of this gesture, including its momentum
+          // once Biography moves underneath the pointer.
+          intent(delta, time, true);
+          return { preventDefault: true, direction: -1 };
+        }
+        return { preventDefault: true, direction: 0 };
+      }
+    }
     return {
       preventDefault: !reading,
       direction: region === 'page' ? direction : 0,
@@ -73,6 +95,6 @@ export function createWheelRouter(options) {
   };
 }
 
-export function swipeDirection(x, y) {
-  return Math.abs(y) >= 48 && Math.abs(y) > Math.abs(x) * 1.2 ? Math.sign(y) : 0;
+export function swipeDirection(x, y, threshold = 48) {
+  return Math.abs(y) >= threshold && Math.abs(y) > Math.abs(x) * 1.2 ? Math.sign(y) : 0;
 }

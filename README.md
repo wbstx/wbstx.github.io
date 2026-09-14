@@ -119,6 +119,11 @@ On narrow screens the fixed summary sits above the scrolling list.
 A page-turn gesture keeps ownership of its inertia even when the publication
 list slides beneath the pointer. Reading starts on a new gesture, including
 a fresh push or reversal, rather than inheriting the page turn's momentum.
+Scrolling to the top of the papers stops there for the rest of that gesture.
+A new upward wheel gesture at the top returns to Biography after 80 pixels of
+accumulated intent. A downward finger swipe of 64 pixels starting at the top,
+or a new upward scroll key press there, also returns to the previous chapter.
+The exit consumes its remaining wheel momentum so it cannot skip another page.
 A 460 ms page transition respects reduced motion. Only the publication list
 scrolls internally; the biography, margins, and fixed summary all accept page-turn
 gestures. There are no visible page navigation bars, counters, or jump links.

@@ -100,3 +100,60 @@ test('card-drag momentum cannot start reading when the list reaches the pointer'
   assert.deepEqual(route(30, 50, 'papers'), { preventDefault: true, direction: 0 });
   assert.deepEqual(route(8, 300, 'papers'), { preventDefault: false, direction: 0 });
 });
+
+test('reaching the paper top cannot exit during the same gesture, even before its page threshold', () => {
+  const route = createWheelRouter();
+  assert.deepEqual(route(-12, 0, 'papers', false, false), { preventDefault: false, direction: 0 });
+  assert.deepEqual(route(-100, 16, 'papers', false, true), { preventDefault: true, direction: 0 });
+  for (let t = 32; t < 1800; t += 16) {
+    assert.deepEqual(route(-100 * Math.exp(-t / 280), t, 'papers', false, true), { preventDefault: true, direction: 0 });
+  }
+});
+
+test('a fresh upward gesture at the paper top exits only after a deliberate push', () => {
+  const route = createWheelRouter();
+  route(-100, 0, 'papers');
+  route(-20, 16, 'papers', false, true);
+  assert.deepEqual(route(-30, 300, 'papers', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(-30, 316, 'papers', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(-25, 332, 'papers', false, true), { preventDefault: true, direction: -1 });
+  for (let t = 348; t < 1800; t += 16) {
+    assert.deepEqual(route(-25 * Math.exp(-(t - 332) / 280), t, t < 500 ? 'papers' : 'page', false, true), { preventDefault: true, direction: 0 }, 'exit momentum must not skip Biography');
+  }
+});
+
+test('a renewed upward push at the top can exit before the old momentum falls silent', () => {
+  const route = createWheelRouter();
+  route(-60, 0, 'papers');
+  for (let t = 20; t <= 420; t += 20) assert.equal(route(-Math.max(2, 50 - t / 8), t, 'papers', false, true).direction, 0);
+  assert.equal(route(-20, 440, 'papers', false, true).direction, 0);
+  assert.equal(route(-30, 456, 'papers', false, true).direction, 0);
+  assert.equal(route(-35, 472, 'papers', false, true).direction, -1);
+});
+
+test('scrolling down at the top cancels a pending exit and keeps reading native', () => {
+  const route = createWheelRouter();
+  route(-30, 0, 'papers', false, true);
+  assert.deepEqual(route(20, 16, 'papers', false, true), { preventDefault: false, direction: 0 });
+  assert.deepEqual(route(-70, 32, 'papers', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(80, 48, 'papers', false, false), { preventDefault: false, direction: 0 });
+});
+
+test('the incoming page-turn gesture cannot accidentally trigger the new top exit', () => {
+  const route = createWheelRouter();
+  route(100, 0, 'page');
+  assert.deepEqual(route(-120, 100, 'papers', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(60, 116, 'papers', false, true), { preventDefault: true, direction: 0 });
+});
+
+test('a single clear push at the top exits once, even with a larger custom page threshold', () => {
+  const route = createWheelRouter({ threshold: 160 });
+  assert.deepEqual(route(-90, 0, 'papers', false, true), { preventDefault: true, direction: -1 });
+  for (let t = 16; t < 800; t += 16) assert.equal(route(-90, t, 'page').direction, 0);
+});
+
+test('the paper top touch exit needs a clear vertical swipe', () => {
+  assert.equal(swipeDirection(0, -50, 64), 0);
+  assert.equal(swipeDirection(8, -70, 64), -1);
+  assert.equal(swipeDirection(80, -70, 64), 0);
+});
