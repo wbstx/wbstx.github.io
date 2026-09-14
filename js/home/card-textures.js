@@ -1,7 +1,6 @@
 import { CanvasTexture, Texture, SRGBColorSpace, RepeatWrapping } from 'three';
+import { CARD_TEXTURE_WIDTH as W, CARD_TEXTURE_HEIGHT as H } from './card-dimensions.js';
 
-const W = 1024;
-const H = 1440;
 const TEXTURE_SCALE = 2;
 const sans = '"Helvetica Neue", Arial, sans-serif';
 const chinese = '"kozuka gothic", "PingFang SC", sans-serif';
@@ -27,7 +26,7 @@ function text(ctx, value, x, y, size, color = white, weight = 400, font = sans) 
 
 function rule(ctx, y) {
   ctx.fillStyle = '#636b6c';
-  ctx.fillRect(80, y, W - 160, 1);
+  ctx.fillRect(96, y, W - 192, 1);
 }
 
 function base(ctx) {
@@ -43,8 +42,8 @@ function base(ctx) {
 // It is drawn at texture resolution, so the fine printed lines stay crisp.
 function fieldStudy(ctx) {
   ctx.save();
-  ctx.translate(28, 178);
-  ctx.scale(968, 760);
+  ctx.translate(46, 152);
+  ctx.scale(820, 644);
   ctx.lineWidth = .001;
   for (let i = -5; i < 31; i++) {
     const y = i * .045;
@@ -157,13 +156,14 @@ export async function createCardTextures(anisotropy) {
   fieldStudy(f);
   grain(f);
   // Keep the front to the artwork, name, and one quiet line of professional info.
-  text(f, '唐逍', 55, 1088, 164, white, 400, chinese);
-  text(f, 'XIAO TANG', 64, 1172, 64, white, 400);
-  text(f, 'Senior Graphics Engineer / HUAWEI', 64, 1280, 34, '#b7c9d0');
+  text(f, '唐逍', 964, 487, 152, white, 400, chinese);
+  text(f, 'XIAO TANG', 970, 570, 56, white, 400);
+  text(f, 'Senior Graphics Engineer', 970, 748, 28, '#b7c9d0');
+  text(f, 'HUAWEI', 970, 796, 30, '#b7c9d0');
 
   base(b);
   grain(b);
-  // Three evenly spaced blocks: identity, interests, and education.
+  // Identity across the top; two quiet columns for interests and education.
   const portrait = new Image();
   let portraitMap = null;
   portrait.src = '/images/avatar-400.jpg';
@@ -176,23 +176,22 @@ export async function createCardTextures(anisotropy) {
     portraitMap.anisotropy = anisotropy;
     portraitMap.needsUpdate = true;
   } catch {
-    text(b, 'xt.', 88, 402, 160);
+    text(b, 'xt.', 112, 398, 160);
   }
-  text(b, '唐逍', 380, 316, 90, white, 400, chinese);
-  text(b, 'XIAO TANG', 380, 380, 48, white, 400);
-  text(b, 'Senior Graphics Engineer', 380, 435, 32, '#b7c9d0');
+  text(b, '唐逍', 420, 292, 100, white, 400, chinese);
+  text(b, 'XIAO TANG', 424, 360, 52, white, 400);
+  text(b, 'Senior Graphics Engineer', 424, 422, 32, '#b7c9d0');
 
   rule(b, 536);
-  text(b, 'INTERESTS', 80, 612, 23, blue, 400, mono);
-  ['Computer Graphics', '3D Reconstruction', 'VR / AR & HCI'].forEach((s, i) => text(b, s, 80, 695 + i * 74, 54));
+  text(b, 'INTERESTS', 96, 624, 23, blue, 400, mono);
+  ['Computer Graphics', '3D Reconstruction', 'VR / AR & HCI'].forEach((s, i) => text(b, s, 96, 702 + i * 68, 46));
 
-  rule(b, 924);
-  text(b, 'EDUCATION', 80, 1000, 23, blue, 400, mono);
-  text(b, 'Ph.D.', 80, 1100, 42, '#b7c9d0');
-  text(b, 'B.Eng.', 80, 1220, 42, '#b7c9d0');
+  text(b, 'EDUCATION', 976, 624, 23, blue, 400, mono);
+  text(b, 'Ph.D.', 976, 712, 38, '#b7c9d0');
+  text(b, 'B.Eng.', 976, 814, 38, '#b7c9d0');
   b.textAlign = 'right';
-  text(b, 'CUHK', 944, 1100, 56);
-  text(b, 'USTC', 944, 1220, 56);
+  text(b, 'CUHK', 1504, 712, 46);
+  text(b, 'USTC', 1504, 814, 46);
   b.textAlign = 'left';
 
   const faces = [front, back].map(canvas => {
@@ -206,7 +205,7 @@ export async function createCardTextures(anisotropy) {
     portrait: portraitMap ? {
       map: portraitMap,
       // Position and size in the back face's normalized artwork coordinates.
-      x: 80 / W, y: 216 / H, width: 248 / W, height: 248 / H,
+      x: 96 / W, y: 184 / H, width: 272 / W, height: 272 / H,
     } : null,
   };
 }

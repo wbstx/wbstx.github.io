@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCardTextures } from './card-textures.js';
+import { CARD_WIDTH, CARD_HEIGHT } from './card-dimensions.js';
 import { BADGE_ATTACHMENT } from './lanyard.js';
-import { CARD_EYELET, COIL_SEAT, createBadgeHardware, updateBadgeHardware } from './hardware.js';
+import { CARD_EYELET, createBadgeHardware, updateBadgeHardware } from './hardware.js';
 import { ENTRANCE_DURATION, startBadgeEntrance, updateEntranceDamping } from './entrance.js';
 import { frameBadgeCamera } from './badge-viewport.js';
 import { createFlipPeek } from './flip-peek.js';
 import { createSpringRibbon, RIBBON_LENGTH } from './spring-ribbon.js';
 import { createCoilGeometry, createCoilMaterial } from './spring-coil.js';
+import { SpringCurve } from './spring-curve.js';
 import { BADGE_PHYSICS_STEP, BADGE_SOLVER_ITERATIONS, followBadgeDrag, releaseBadgeMotion, updateBadgeYaw } from './badge-motion.js';
 
 const stage = document.querySelector('#badge-stage');
@@ -101,7 +103,7 @@ async function init() {
   world.numSolverIterations = BADGE_SOLVER_ITERATIONS;
   world.timestep = BADGE_PHYSICS_STEP;
 
-  const width = 2.48, height = 3.48;
+  const width = CARD_WIDTH, height = CARD_HEIGHT;
   const shape = roundedShape(width, height, .075, true);
   const card = new THREE.Group();
   scene.add(card);
@@ -182,6 +184,7 @@ async function init() {
   const origin = { x: 0, y: 0, z: 0 };
   const anchorPosition = { x: 0, y: 4.98, z: 0 };
   const rest = { x: 0, y: anchorPosition.y - RIBBON_LENGTH - BADGE_ATTACHMENT.y, z: 0 };
+  shadow.position.y = rest.y - height / 2 - .2;
   const rigidCard = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(rest.x, rest.y, rest.z).setLinearDamping(3.2).setAngularDamping(4.5));
   world.createCollider(RAPIER.ColliderDesc.cuboid(width / 2, height / 2, .045).setMass(1).setCollisionGroups(0), rigidCard);
   const springRibbon = createSpringRibbon({ RAPIER, world, anchor: anchorPosition, card: rigidCard, attachment: BADGE_ATTACHMENT });
@@ -205,9 +208,7 @@ async function init() {
   const dragTarget = new THREE.Vector3();
   const quat = new THREE.Quaternion();
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-  const curve = new THREE.CatmullRomCurve3(Array.from({ length: bodies.length + 2 }, () => new THREE.Vector3()));
-  const socket = new THREE.Vector3();
-  const socketApproach = new THREE.Vector3();
+  const curve = new SpringCurve(bodies.length);
   let cardClickPointer = null;
   const flipPeek = createFlipPeek({ disabled: motionPreference.matches });
 
@@ -361,15 +362,8 @@ async function init() {
   function draw() {
     card.position.copy(rigidCard.translation());
     card.quaternion.copy(rigidCard.rotation());
-    updateBadgeHardware(hardware, card.position, card.quaternion);
-    curve.points[0].copy(anchorPosition);
-    for (let i = 0; i < bodies.length - 1; i++) curve.points[i + 1].copy(bodies[i].translation());
-    // Finish inside the black terminal above the independent D-ring.
-    const suspension = hardware.suspension;
-    socket.copy(COIL_SEAT).applyQuaternion(suspension.quaternion).add(suspension.position);
-    socketApproach.set(0, .1, 0).applyQuaternion(suspension.quaternion).add(socket);
-    curve.points[bodies.length].copy(socketApproach);
-    curve.points[bodies.length + 1].copy(socket);
+    updateBadgeHardware(hardware, card.position, card.quaternion, bodies.at(-2).translation());
+    curve.update(anchorPosition, bodies, hardware.coilSocket, hardware.coilDirection);
     coilGeometry.update(curve);
     shadow.position.x = card.position.x * .55 + .12;
     shadow.material.opacity = THREE.MathUtils.clamp(.5 - (card.position.y - rest.y) * .16, .12, .5);

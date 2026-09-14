@@ -18,7 +18,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 0; }
-body { margin: 0; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: #151718; isolation: isolate; -webkit-font-smoothing: antialiased; }
 [lang="zh-CN"] { font-family: "kozuka gothic", "PingFang SC", sans-serif; }
 a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
@@ -53,10 +53,12 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   padding: 0 6%;
   overflow: hidden;
 }
-.hero::before {
-  position: absolute;
+/* One viewport layer stays still as chapters and the paper list scroll. */
+body::before {
+  position: fixed;
   content: "";
   inset: 0;
+  z-index: -1;
   pointer-events: none;
   background: url("/images/home/field-lines.svg") center / cover;
   opacity: .10;
@@ -116,81 +118,55 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   visibility: hidden;
   pointer-events: none;
 }
+.fallback-badge {
+  position: relative;
+  width: min(604px, 67svh, 78vw);
+  container-type: inline-size;
+  transform: translateY(4svh) rotate(5deg);
+}
+.fallback-suspension {
+  position: absolute;
+  left: 50%;
+  bottom: 91.13%;
+  width: 25.6%;
+  height: auto;
+  overflow: visible;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+}
 .fallback-card {
   position: relative;
-  width: 270px;
-  padding: 24px;
-  background: #222728;
-  color: #f4f4ed;
-  border-radius: 6px;
+  width: 100%;
+  aspect-ratio: 1600 / 1024;
+  background: #172022 url("/images/home/field-lines.svg") center / cover;
+  background-blend-mode: multiply;
+  border: 1px solid #68787d;
+  color: #e8e9e4;
+  border-radius: 2.4%;
   box-shadow: 12px 23px 36px #00000055;
-  transform: rotate(7deg);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
   z-index: 1;
 }
-.fallback-card:before {
+.fallback-card::before {
   content: "";
-  display: block;
+  position: absolute;
+  top: 8.87%;
+  left: 50%;
+  width: 2.56%;
+  aspect-ratio: 1;
   border-radius: 50%;
   background: #050708;
-  height: 10px;
-  width: 10px;
-  align-self: center;
-  margin-bottom: 12px;
+  box-shadow: 0 0 0 2px #798188;
+  transform: translate(-50%, -50%);
 }
-.fallback-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  object-position: center 38%;
-  border-radius: 3px;
-  margin: 8px 0 12px;
-}
-.fallback-top {
-  font-family: monospace;
-  font-size: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-.fallback-card strong {
-  font-size: 38px;
-  font-weight: 400;
-  letter-spacing: -.04em;
-}
-.fallback-latin {
-  font-size: 22px !important;
-  letter-spacing: .07em;
-  color: #e4e7e5 !important;
-}
-.fallback-card strong span {
-  font-size: 17px;
-  margin-left: 5px;
-}
-.fallback-card > span:not(.fallback-top) {
-  font-size: 10px;
-  color: #b4c3ca;
-}
-.fallback-bottom {
-  padding-top: 12px;
-  border-top: 1px solid #53646c;
-  margin-top: 10px;
-}
-.fallback-strap {
-  position: absolute;
-  top: 0;
-  height: 30%;
-  width: 24px;
-  background: #22272a;
-  transform: rotate(4deg);
-  border: 1px solid #53626b;
-}
+.fallback-card img { position: absolute; top: 15%; left: 3%; width: 51%; height: 63%; object-fit: contain; }
+.fallback-card strong { position: absolute; left: 60.25%; top: 34%; font-size: 9.5cqw; line-height: 1; font-weight: 400; letter-spacing: -.055em; }
+.fallback-latin { position: absolute; left: 60.6%; top: 52%; font-size: 3.5cqw; line-height: 1; letter-spacing: -.02em; }
+.fallback-role { position: absolute; left: 60.6%; top: 70%; font-size: 1.75cqw; line-height: 1.7; color: #b4c3ca; }
 /* Full-screen chapters with an independent publication reading area. */
 .page { position: relative; min-height: 100svh; }
 .research {
   color: var(--ink);
-  background: #111416;
   border-top: 1px solid var(--line);
   padding: 40px max(8%, calc((100% - 1200px) / 2));
   display: flex;
@@ -222,6 +198,7 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
 .biography-visual {
   position: relative;
   isolation: isolate;
+  mix-blend-mode: lighten;
   width: min(calc(100% + var(--biography-inset)), 112svh);
   margin-left: calc(-1 * var(--biography-inset));
   min-width: 0;
@@ -296,16 +273,18 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .badge-column { position: static; }
   .badge-stage { position: absolute; inset: 0; height: 100%; z-index: 3; pointer-events: none; }
   .badge-stage::before { display: none; }
-  .badge-fallback { left: 42%; }
+  .badge-fallback { left: 32.5%; }
   .hero.is-badge-hovered, .hero.is-badge-hovered a { cursor: grab; }
   .hero.is-badge-dragging, .hero.is-badge-dragging a { cursor: grabbing; }
 }
 @media (max-width: 1100px) and (min-width: 901px) {
+  .badge-fallback { left: 30.5%; }
   .hero { grid-template-columns: minmax(210px, .65fr) minmax(0, 1.35fr); padding: 0 5%; column-gap: 2%; }
   .hero-role { font-size: 13px; }
   .hero-note { font-size: 12px; }
 }
 @media (max-width: 900px) {
+  .fallback-badge { width: min(510px, 60svh, 86vw); transform: translateY(4svh) rotate(5deg); }
   .hero { display: flex; flex-direction: column; padding: 0 6%; }
   .badge-column { order: 1; }
   .badge-stage { height: clamp(460px, calc(100svh - 236px), 820px); margin: 0 -6.82%; }

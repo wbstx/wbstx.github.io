@@ -1,16 +1,15 @@
-import { createWheelIntent, swipeDirection } from './page-input.js';
+import { createWheelRouter, swipeDirection } from './page-input.js';
 
 const main = document.querySelector('#main');
 const pages = [...main.querySelectorAll('.page')];
 const status = document.querySelector('#page-status');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
-const wheelIntent = createWheelIntent();
+const routeWheel = createWheelRouter();
 let current = 0;
 let animation = 0;
 let turning = false;
 let scrollTimer;
 let touch = null;
-let wheelRegion = 'page';
 
 const pageTop = index => pages[index].getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
 const hashPage = () => {
@@ -64,11 +63,10 @@ function publicationArea(target) {
 
 document.addEventListener('wheel', event => {
   if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-  if (publicationArea(event.target)) { wheelRegion = 'papers'; return; }
-  if (wheelRegion !== 'page') { wheelIntent.reset(); wheelRegion = 'page'; }
-  event.preventDefault();
   const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? main.clientHeight : 1);
-  const direction = wheelIntent(delta, performance.now(), !!main.querySelector('.is-dragging'));
+  const region = publicationArea(event.target) ? 'papers' : 'page';
+  const { preventDefault, direction } = routeWheel(delta, performance.now(), region, !!main.querySelector('.is-dragging'));
+  if (preventDefault) event.preventDefault();
   if (direction) goTo(current + direction);
 }, { passive: false });
 

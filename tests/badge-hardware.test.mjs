@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { CARD_HEIGHT } from '../js/home/card-dimensions.js';
 import assert from 'node:assert/strict';
 import { CatmullRomCurve3, Euler, Quaternion, Vector3 } from 'three';
 import { CARD_EYELET, COIL_SEAT, HARDWARE_ATTACHMENT, STRAP_SEAT, SWIVEL_PIVOT, createBadgeHardware, updateBadgeHardware } from '../js/home/hardware.js';
@@ -12,7 +13,7 @@ test('the continuous hook crosses the eyelet, clearing the card on both faces', 
   for (let i = 0; i < vertices.count; i++) {
     const x = vertices.getX(i), y = vertices.getY(i), z = vertices.getZ(i);
     assert([x, y, z].every(Number.isFinite));
-    if (y >= 1.74) continue;
+    if (y >= CARD_HEIGHT / 2) continue;
     if (z > .08) front++;
     if (z < -.08) back++;
     // Include the raised eyelet rims, which extend beyond the card faces.
@@ -29,7 +30,7 @@ test('the continuous hook crosses the eyelet, clearing the card on both faces', 
   let previous = path.getPoint(0);
   for (let i = 1; i <= 1024; i++) {
     const point = path.getPoint(i / 1024);
-    if (previous.z > 0 && point.z <= 0 && point.y < 1.74) crossings++;
+    if (previous.z > 0 && point.z <= 0 && point.y < CARD_HEIGHT / 2) crossings++;
     previous = point;
   }
   assert.equal(crossings, 1, 'One continuous metal section threads the hole');

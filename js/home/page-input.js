@@ -3,6 +3,7 @@
 export function createWheelIntent({ threshold = 40, pause = 180, rearmAfter = 380 } = {}) {
   let lastTime, distance, consumed, firedAt, firedDirection, tailMinimum;
   function reset() {
+    intent.gestureId = 0;
     lastTime = -Infinity;
     distance = 0;
     consumed = false;
@@ -19,7 +20,12 @@ export function createWheelIntent({ threshold = 40, pause = 180, rearmAfter = 38
     const freshPush = consumed && time - firedAt >= rearmAfter && (
       direction !== firedDirection || (magnitude >= 12 && magnitude >= tailMinimum * 2.5)
     );
-    if (quiet || freshPush) { distance = 0; consumed = false; tailMinimum = Infinity; }
+    if (quiet || freshPush) {
+      distance = 0;
+      consumed = false;
+      tailMinimum = Infinity;
+      intent.gestureId++;
+    }
     lastTime = time;
     // An actual card drag owns its gesture. Page animations are deliberately
     // excluded: a new gesture can interrupt them rather than becoming stuck.
@@ -42,6 +48,29 @@ export function createWheelIntent({ threshold = 40, pause = 180, rearmAfter = 38
   }
   intent.reset = reset;
   return intent;
+}
+
+// Keep a page-turn gesture's tail out of a paper list that moves under the
+// pointer. Only a new gesture may transfer ownership from the page to papers.
+export function createWheelRouter(options) {
+  const intent = createWheelIntent(options);
+  let owner = null;
+  return (delta, time, region, blocked = false) => {
+    // Leaving the reading column remains immediately responsive.
+    if (region === 'page' && owner === 'papers') {
+      intent.reset();
+      owner = null;
+    }
+    const previousGesture = intent.gestureId;
+    const direction = intent(delta, time, blocked);
+    if (owner === null || intent.gestureId !== previousGesture) owner = region;
+    if (blocked) owner = 'page';
+    const reading = owner === 'papers' && region === 'papers';
+    return {
+      preventDefault: !reading,
+      direction: region === 'page' ? direction : 0,
+    };
+  };
 }
 
 export function swipeDirection(x, y) {

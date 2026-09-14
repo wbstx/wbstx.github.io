@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { CARD_WIDTH, CARD_HEIGHT } from '../js/home/card-dimensions.js';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { frameBadgeCamera } from '../js/home/badge-viewport.js';
@@ -33,7 +34,7 @@ test('a card over the text column stays visible and can be raycast at its screen
   const viewport = { left: 0, width: 1280, height: 900 };
   const fullCamera = camera();
   frameBadgeCamera(fullCamera, viewport, { left: 500, width: 680 }, true);
-  const card = new THREE.Mesh(new THREE.PlaneGeometry(2.48, 3.48), new THREE.MeshBasicMaterial());
+  const card = new THREE.Mesh(new THREE.PlaneGeometry(CARD_WIDTH, CARD_HEIGHT), new THREE.MeshBasicMaterial());
   card.position.set(-4, 1.5, .35);
   card.updateMatrixWorld();
   const center = card.position.clone().project(fullCamera);
@@ -51,6 +52,10 @@ test('switching to mobile clears the desktop offset and recenters the badge', ()
   const mobile = { left: 0, width: 390, height: 600 };
   frameBadgeCamera(result, mobile, mobile, false);
   assert.equal(result.view.enabled, false);
-  assert.equal(result.position.z, 11.9);
+  assert.ok(result.position.z >= 11.9);
+  for (const x of [-CARD_WIDTH / 2, CARD_WIDTH / 2]) {
+    const [screenX] = screenPoint(result, mobile, [x, 1, .045]);
+    assert.ok(screenX > 20 && screenX < mobile.width - 20, 'the horizontal card fits with space on both sides');
+  }
   assert.ok(Math.abs(screenPoint(result, mobile, [0, 1.5, 0])[0] - 195) < 1e-8);
 });

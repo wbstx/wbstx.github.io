@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { CARD_WIDTH, CARD_HEIGHT } from '../js/home/card-dimensions.js';
 import assert from 'node:assert/strict';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { Quaternion, Vector3 } from 'three';
@@ -15,7 +16,7 @@ function setup() {
   const anchor = { x: 0, y: 4.98, z: 0 };
   const rest = { x: 0, y: anchor.y - RIBBON_LENGTH - BADGE_ATTACHMENT.y, z: 0 };
   const card = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(0, rest.y, 0).setLinearDamping(3.2).setAngularDamping(4.5));
-  world.createCollider(RAPIER.ColliderDesc.cuboid(1.24, 1.74, .045).setMass(1).setCollisionGroups(0), card);
+  world.createCollider(RAPIER.ColliderDesc.cuboid(CARD_WIDTH / 2, CARD_HEIGHT / 2, .045).setMass(1).setCollisionGroups(0), card);
   const ribbon = createSpringRibbon({ RAPIER, world, anchor, card, attachment: BADGE_ATTACHMENT });
   const step = seconds => { for (let i = 0; i < Math.round(seconds / world.timestep); i++) world.step(); };
   step(3);
