@@ -36,10 +36,13 @@ npm run preview
 - `tests/badge-hardware.test.mjs`: aperture clearance, swivel isolation, and ribbon attachment regressions.
 - `images/home/`: the badge's vector field study and the homepage's charcoal flower illustration.
 - `images/home/flower-noir-v2.jpg`: charcoal artwork with the cropped hand and wrist completed, with its imagegen prompt in the adjacent Markdown file. The previous v1 asset remains available.
+- `images/home/flower-noir-v3.jpg`: the same composition with a black compositing matte. CSS `lighten` blending removes the matte against the biography background; imagegen provenance and the final prompt are in the adjacent Markdown file.
 - `lib/kozuka gothic/kozuka gothic.otf`: original Chinese typeface, loaded before baking card text.
 - `images/avatar-400.jpg`: original portrait, rendered as a separate sRGB photo layer on the back. Its neutral print tint and unlit material keep studio lights and ACES from washing out skin tones.
 
-The first screen has a plain charcoal background. The biography illustration
+The first screen has its original curved background lines and subtle studio glow.
+The biography illustration uses a flat black matte and `lighten` blending to
+merge into the charcoal page without a visible rectangular backdrop. It
 extends to the left edge of the viewport, opposite the separate body copy.
 The light "Biography." title overlaps its upper third, leaving more of the
 flower visible below. The hand's upper contour and knuckles are fully visible;

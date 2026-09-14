@@ -53,6 +53,14 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   padding: 0 6%;
   overflow: hidden;
 }
+.hero::before {
+  position: absolute;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  background: url("/images/home/field-lines.svg") center / cover;
+  opacity: .10;
+}
 .hero-copy {
   position: relative;
   z-index: 2;
@@ -71,6 +79,13 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
 .hero-contact { display: inline-flex; align-items: center; gap: 18px; font-size: 12px; color: #b7c6ce; }
 .badge-column { position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .badge-stage { position: relative; height: clamp(560px, 100svh, 900px); isolation: isolate; }
+.badge-stage::before {
+  position: absolute;
+  content: "";
+  inset: 12% -8% 0;
+  background: radial-gradient(ellipse at 52% 55%, #40464966 0%, #30373930 31%, #15171800 67%);
+  z-index: -1;
+}
 .badge-canvas { position: absolute; inset: 0; z-index: 2; }
 .badge-canvas canvas {
   width: 100%;
@@ -220,8 +235,10 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   overflow: hidden;
   pointer-events: none;
   user-select: none;
+  background: #111416;
 }
-.biography-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* A flat black matte disappears against the page; fine ink edges stay crisp. */
+.biography-art img { display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: lighten; }
 .biography-copy { padding: 24px 0; font-size: 16px; }
 .biography-copy p { color: #a7b4bc; margin: 24px 0 0; }
 .biography-copy strong { color: #d9e0e3; font-weight: 500; }
@@ -268,9 +285,17 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
 }
 @media (min-width: 901px) {
   .hero { max-width: none; overflow: visible; isolation: isolate; }
+  .hero::after {
+    position: absolute;
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 72% 55%, #40464966 0%, #30373930 25%, #15171800 55%);
+  }
   .hero-copy { margin-inline-start: clamp(48px, 8vw, 128px); }
   .badge-column { position: static; }
   .badge-stage { position: absolute; inset: 0; height: 100%; z-index: 3; pointer-events: none; }
+  .badge-stage::before { display: none; }
   .badge-fallback { left: 42%; }
   .hero.is-badge-hovered, .hero.is-badge-hovered a { cursor: grab; }
   .hero.is-badge-dragging, .hero.is-badge-dragging a { cursor: grabbing; }
