@@ -37,7 +37,7 @@ function showFallback() {
   stage.classList.remove('is-ready');
   stage.setAttribute('aria-busy', 'false');
   mount.hidden = true;
-
+  sideStatus.textContent = 'The interactive card is unavailable. Profile information is shown alongside it.';
 }
 
 function roundedShape(width, height, radius, slot = false) {
@@ -60,14 +60,14 @@ function roundedShape(width, height, radius, slot = false) {
   return shape;
 }
 
-async function init() {
+async function init(beforeReveal) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(THREE.MathUtils.clamp(devicePixelRatio, 2, 3));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
   const canvas = renderer.domElement;
-  canvas.tabIndex = 0;
+  canvas.tabIndex = -1;
   canvas.setAttribute('role', 'button');
   canvas.setAttribute('aria-label', 'Turn Xiao Tang’s profile card');
   canvas.setAttribute('aria-pressed', 'false');
@@ -99,6 +99,8 @@ async function init() {
     import('@dimforge/rapier3d-compat'),
   ]);
   await RAPIER.init();
+  // Fetch and decode assets alongside the loader; start the entrance after its first cycle.
+  await beforeReveal;
   const world = new RAPIER.World({ x: 0, y: -23, z: 0 });
   world.numSolverIterations = BADGE_SOLVER_ITERATIONS;
   world.timestep = BADGE_PHYSICS_STEP;
@@ -430,9 +432,11 @@ async function init() {
   canvas.addEventListener('webglcontextrestored', () => {
     stopped = false;
     mount.hidden = false;
-    stage.classList.add('is-ready');
-
     resetPosition();
+    draw();
+    stage.classList.add('is-ready');
+    stage.setAttribute('aria-busy', 'false');
+    sideStatus.textContent = back ? 'Back of card: Xiao Tang, senior graphics engineer.' : 'Front of card: Xiao Tang, senior graphics engineer at Huawei.';
     resume();
   });
 
@@ -443,13 +447,17 @@ async function init() {
     stage.dataset.entrance = 'playing';
   }
   draw();
+  canvas.tabIndex = 0;
+  sideStatus.textContent = 'Front of card: Xiao Tang, senior graphics engineer at Huawei.';
   stage.classList.add('is-ready');
   stage.setAttribute('aria-busy', 'false');
 
   resume();
 }
 
-init().catch(error => {
-  console.error('The interactive card could not start:', error);
-  showFallback();
-});
+export function initBadge(beforeReveal = Promise.resolve()) {
+  return init(beforeReveal).catch(error => {
+    console.error('The interactive card could not start:', error);
+    showFallback();
+  });
+}

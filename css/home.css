@@ -88,7 +88,8 @@ body::before {
   background: radial-gradient(ellipse at 52% 55%, #40464966 0%, #30373930 31%, #15171800 67%);
   z-index: -1;
 }
-.badge-canvas { position: absolute; inset: 0; z-index: 2; }
+.badge-canvas { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 220ms cubic-bezier(.23, 1, .32, 1); }
+.badge-stage.is-ready .badge-canvas { opacity: 1; }
 .badge-canvas canvas {
   width: 100%;
   height: 100%;
@@ -108,61 +109,31 @@ body::before {
 .badge-fallback {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 200ms ease;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 180ms ease-out, visibility 0s;
 }
 .badge-stage.is-ready .badge-fallback {
   opacity: 0;
   visibility: hidden;
-  pointer-events: none;
+  transition-delay: 0s, 180ms;
 }
-.fallback-badge {
+.badge-loader-visual {
   position: relative;
-  width: min(604px, 67svh, 78vw);
-  container-type: inline-size;
-  transform: translateY(4svh) rotate(5deg);
+  width: min(560px, 74svh, 94vw);
+  max-width: 100%;
+  aspect-ratio: 10 / 7;
 }
-.fallback-suspension {
+.badge-loader-visual img, .badge-loader-visual canvas {
   position: absolute;
-  left: 50%;
-  bottom: 91.13%;
-  width: 25.6%;
-  height: auto;
-  overflow: visible;
-  transform: translateX(-50%);
-  z-index: 2;
-  pointer-events: none;
-}
-.fallback-card {
-  position: relative;
+  inset: 0;
+  display: block;
   width: 100%;
-  aspect-ratio: 1600 / 1024;
-  background: #172022 url("/images/home/field-lines.svg") center / cover;
-  background-blend-mode: multiply;
-  border: 1px solid #68787d;
-  color: #e8e9e4;
-  border-radius: 2.4%;
-  box-shadow: 12px 23px 36px #00000055;
-  z-index: 1;
+  height: 100%;
 }
-.fallback-card::before {
-  content: "";
-  position: absolute;
-  top: 8.87%;
-  left: 50%;
-  width: 2.56%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #050708;
-  box-shadow: 0 0 0 2px #798188;
-  transform: translate(-50%, -50%);
-}
-.fallback-card img { position: absolute; top: 15%; left: 3%; width: 51%; height: 63%; object-fit: contain; }
-.fallback-card strong { position: absolute; left: 60.25%; top: 34%; font-size: 9.5cqw; line-height: 1; font-weight: 400; letter-spacing: -.055em; }
-.fallback-latin { position: absolute; left: 60.6%; top: 52%; font-size: 3.5cqw; line-height: 1; letter-spacing: -.02em; }
-.fallback-role { position: absolute; left: 60.6%; top: 70%; font-size: 1.75cqw; line-height: 1.7; color: #b4c3ca; }
+.badge-loader-visual.has-canvas img { visibility: hidden; }
 /* Full-screen chapters with an independent publication reading area. */
 .page { position: relative; min-height: 100svh; }
 .research {
@@ -284,7 +255,6 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .hero-note { font-size: 12px; }
 }
 @media (max-width: 900px) {
-  .fallback-badge { width: min(510px, 60svh, 86vw); transform: translateY(4svh) rotate(5deg); }
   .hero { display: flex; flex-direction: column; padding: 0 6%; }
   .badge-column { order: 1; }
   .badge-stage { height: clamp(460px, calc(100svh - 236px), 820px); margin: 0 -6.82%; }
