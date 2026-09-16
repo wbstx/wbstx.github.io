@@ -258,6 +258,8 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .hero { display: flex; flex-direction: column; padding: 0 6%; }
   .badge-column { order: 1; }
   .badge-stage { height: clamp(460px, calc(100svh - 236px), 820px); margin: 0 -6.82%; }
+  /* The prism sits at 45% of its artwork; align it with the centered profile below. */
+  .badge-loader-visual { transform: translateX(5%); }
   .hero-copy { order: 2; align-self: stretch; padding: 0 0 24px; text-align: center; }
   .hero h1 { display: flex; align-items: baseline; justify-content: center; gap: 14px; }
   .hero-name { font-size: 32px; }
