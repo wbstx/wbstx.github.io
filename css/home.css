@@ -213,9 +213,9 @@ body::before {
 .work-copy > strong { color: #becbd2; font-weight: 500; }
 .superhighlight { display: inline-block; margin-left: 6px; padding: 0 7px; border: 1px solid #425965; color: #c8deeb; font-size: 10px; line-height: 1.8; }
 html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-.is-paged #main { height: 100dvh; overflow-y: hidden; scroll-snap-type: y mandatory; scrollbar-width: none; overflow-anchor: none; overscroll-behavior: none; touch-action: pan-y pinch-zoom; }
+.is-paged #main { height: 100dvh; overflow-y: hidden; scroll-behavior: auto; scrollbar-width: none; overflow-anchor: none; overscroll-behavior: none; touch-action: pan-y pinch-zoom; }
 .is-paged #main::-webkit-scrollbar { display: none; }
-.is-paged .page { height: 100dvh; min-height: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+.is-paged .page { height: 100dvh; min-height: 0; }
 .is-paged .publication-list { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #45545b transparent; }
 .is-paged .hero { grid-template-rows: minmax(0, 1fr); }
 .is-paged .badge-stage { height: 100%; min-height: 0; }

@@ -32,16 +32,16 @@ function updatePage(index, writeHash = true) {
 function goTo(index, instant = false, writeHash = true) {
   index = Math.max(0, Math.min(pages.length - 1, index));
   cancelAnimationFrame(animation);
+  clearTimeout(scrollTimer);
   const from = main.scrollTop;
   const to = pageTop(index);
   const focusedPage = document.activeElement?.closest('.page');
   updatePage(index, writeHash);
   if (focusedPage && focusedPage !== pages[index]) pages[index].focus({ preventScroll: true });
   turning = true;
-  main.style.scrollSnapType = 'none';
   const finish = () => {
-    main.scrollTop = to;
-    main.style.scrollSnapType = '';
+    // Browser chrome can change the viewport height during a page turn.
+    main.scrollTop = pageTop(index);
     turning = false;
   };
   if (instant || motion.matches || Math.abs(to - from) < 1) { finish(); return; }
@@ -133,8 +133,9 @@ main.addEventListener('scroll', () => {
   clearTimeout(scrollTimer);
   scrollTimer = setTimeout(() => {
     if (turning) return;
-    const nearest = pages.reduce((best, _, i) => Math.abs(pageTop(i) - main.scrollTop) < Math.abs(pageTop(best) - main.scrollTop) ? i : best, 0);
-    updatePage(nearest);
+    // Native overscroll or viewport restoration is not a navigation intent.
+    // Keep the selected chapter instead of turning a transient offset into #about.
+    if (Math.abs(pageTop(current) - main.scrollTop) > 1) goTo(current, true, false);
   }, 140);
 }, { passive: true });
 function followHash() {
@@ -144,7 +145,16 @@ function followHash() {
   if (area && target !== area) area.scrollTop = target.offsetTop - area.offsetTop;
 }
 window.addEventListener('hashchange', followHash);
-window.addEventListener('resize', () => goTo(current, true));
+// Observe the laid-out scrollport: mobile browser bars can resize it separately
+// from window.resize, and orientation changes may settle over multiple layouts.
+let viewportWidth = main.clientWidth;
+let viewportHeight = main.clientHeight;
+new ResizeObserver(() => {
+  if (main.clientWidth === viewportWidth && main.clientHeight === viewportHeight) return;
+  viewportWidth = main.clientWidth;
+  viewportHeight = main.clientHeight;
+  goTo(current, true, false);
+}).observe(main);
 window.addEventListener('pageshow', followHash);
 window.addEventListener('blur', () => { touch = null; });
 motion.addEventListener('change', () => goTo(current, true));
