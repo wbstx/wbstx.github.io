@@ -157,3 +157,20 @@ test('the paper top touch exit needs a clear vertical swipe', () => {
   assert.equal(swipeDirection(8, -70, 64), -1);
   assert.equal(swipeDirection(80, -70, 64), 0);
 });
+
+
+test('reaching the profile bottom keeps momentum out of the publication page', () => {
+  const route = createWheelRouter();
+  assert.deepEqual(route(60, 0, 'profile', false, false), { preventDefault: false, direction: 0 });
+  assert.deepEqual(route(50, 16, 'profile', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(90, 300, 'profile', false, true), { preventDefault: true, direction: 1 });
+  assert.deepEqual(route(40, 316, 'papers', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(30, 600, 'papers', false, true), { preventDefault: false, direction: 0 });
+});
+
+test('returning from papers does not scroll the overflowing profile with exit momentum', () => {
+  const route = createWheelRouter();
+  assert.equal(route(-90, 0, 'papers', false, true).direction, -1);
+  assert.deepEqual(route(-40, 16, 'profile', false, true), { preventDefault: true, direction: 0 });
+  assert.deepEqual(route(-30, 300, 'profile', false, true), { preventDefault: false, direction: 0 });
+});

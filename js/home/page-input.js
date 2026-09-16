@@ -50,16 +50,18 @@ export function createWheelIntent({ threshold = 40, pause = 180, rearmAfter = 38
   return intent;
 }
 
-// Keep a page-turn gesture's tail out of a paper list that moves under the
-// pointer. Only a new gesture may transfer ownership from the page to papers.
+// A fresh gesture transfers ownership between paging and an inner reading area.
+// Papers exit at the top; an overflowing profile exits at the bottom.
 export function createWheelRouter({ edgeThreshold = 80, ...options } = {}) {
   const intent = createWheelIntent(options);
   let owner = null;
-  let exitAtTop = false;
+  let exitAtEdge = false;
   let edgeDistance = 0;
-  return (delta, time, region, blocked = false, atTop = false) => {
+  return (delta, time, region, blocked = false, atEdge = false) => {
+    const exitDirection = region === 'profile' ? 1 : -1;
+    const towardEdge = delta * exitDirection > 0;
     // Leaving the reading column remains immediately responsive.
-    if (region === 'page' && owner === 'papers') {
+    if (region === 'page' && owner && owner !== 'page') {
       intent.reset();
       owner = null;
     }
@@ -67,23 +69,22 @@ export function createWheelRouter({ edgeThreshold = 80, ...options } = {}) {
     const direction = intent(delta, time, blocked);
     if (owner === null || intent.gestureId !== previousGesture) {
       owner = region;
-      // Arriving at the top partway through a reading gesture never exits.
-      exitAtTop = region === 'papers' && atTop && delta < 0;
+      // Arriving at the edge partway through a reading gesture never exits.
+      exitAtEdge = region !== 'page' && atEdge && towardEdge;
       edgeDistance = 0;
     }
-    if (blocked) { owner = 'page'; exitAtTop = false; }
-    const reading = owner === 'papers' && region === 'papers';
+    if (blocked) { owner = 'page'; exitAtEdge = false; }
+    const reading = owner !== 'page' && owner === region;
     if (reading) {
-      if (!atTop || delta >= 0) { exitAtTop = false; edgeDistance = 0; }
-      if (atTop && delta < 0) {
-        if (exitAtTop) edgeDistance -= delta;
+      if (!atEdge || !towardEdge) { exitAtEdge = false; edgeDistance = 0; }
+      if (atEdge && towardEdge) {
+        if (exitAtEdge) edgeDistance += Math.abs(delta);
         if (edgeDistance >= edgeThreshold) {
           owner = 'page';
-          exitAtTop = false;
-          // The exit owns the rest of this gesture, including its momentum
-          // once Biography moves underneath the pointer.
+          exitAtEdge = false;
+          // The exit owns the rest of this gesture, including its momentum.
           intent(delta, time, true);
-          return { preventDefault: true, direction: -1 };
+          return { preventDefault: true, direction: exitDirection };
         }
         return { preventDefault: true, direction: 0 };
       }

@@ -55,26 +55,35 @@ function goTo(index, instant = false, writeHash = true) {
   animation = requestAnimationFrame(frame);
 }
 
-// The paper list is the only inner scroll area. All other visible surfaces
-// route to full-page navigation through wheel, touch, or scroll keys.
-function publicationArea(target) {
-  return target.closest('.publication-list');
+// The profile only scrolls internally when its content exceeds the viewport.
+// Keep the publication summary and a fully visible profile available for paging.
+function readingAreaFor(target) {
+  const papers = target.closest('.publication-list');
+  if (papers) return { element: papers, region: 'papers', direction: -1 };
+  const profile = target.closest('.profile-content');
+  if (profile && profile.scrollHeight > profile.clientHeight + 1) {
+    return { element: profile, region: 'profile', direction: 1 };
+  }
+  return null;
 }
+const atReadingEdge = area => area.direction < 0
+  ? area.element.scrollTop <= 1
+  : area.element.scrollTop + area.element.clientHeight >= area.element.scrollHeight - 1;
 
 document.addEventListener('wheel', event => {
   if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
   const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? main.clientHeight : 1);
-  const readingArea = publicationArea(event.target);
-  const region = readingArea ? 'papers' : 'page';
-  const { preventDefault, direction } = routeWheel(delta, performance.now(), region, !!main.querySelector('.is-dragging'), readingArea?.scrollTop <= 1);
+  const readingArea = readingAreaFor(event.target);
+  const region = readingArea?.region || 'page';
+  const { preventDefault, direction } = routeWheel(delta, performance.now(), region, !!main.querySelector('.is-dragging'), readingArea && atReadingEdge(readingArea));
   if (preventDefault) event.preventDefault();
   if (direction) goTo(current + direction);
 }, { passive: false });
 
 document.addEventListener('touchstart', event => {
   if (event.touches.length !== 1 || event.defaultPrevented || main.querySelector('.is-dragging')) { touch = null; return; }
-  const readingArea = publicationArea(event.target);
-  if (readingArea && readingArea.scrollTop > 1) { touch = null; return; }
+  const readingArea = readingAreaFor(event.target);
+  if (readingArea && !atReadingEdge(readingArea)) { touch = null; return; }
   const point = event.touches[0];
   touch = { x: point.clientX, y: point.clientY, readingArea };
 }, { passive: true });
@@ -82,7 +91,7 @@ document.addEventListener('touchmove', event => {
   if (!touch) return;
   if (event.touches.length !== 1 || event.defaultPrevented || main.querySelector('.is-dragging')) { touch = null; return; }
   const point = event.touches[0];
-  if (touch.readingArea && (point.clientY < touch.y || touch.readingArea.scrollTop > 1)) {
+  if (touch.readingArea && ((touch.y - point.clientY) * touch.readingArea.direction < 0 || !atReadingEdge(touch.readingArea))) {
     touch = null;
     return;
   }
@@ -94,7 +103,7 @@ document.addEventListener('touchend', event => {
   if (!gesture || event.defaultPrevented || !event.changedTouches.length) return;
   const point = event.changedTouches[0];
   const direction = swipeDirection(gesture.x - point.clientX, gesture.y - point.clientY, gesture.readingArea ? 64 : 48);
-  if (gesture.readingArea && direction !== -1) return;
+  if (gesture.readingArea && direction !== gesture.readingArea.direction) return;
   if (direction) goTo(current + direction);
 });
 document.addEventListener('touchcancel', () => { touch = null; });
@@ -107,11 +116,12 @@ document.addEventListener('keydown', event => {
   if (!direction && event.key !== 'Home' && event.key !== 'End') return;
   event.preventDefault();
   if (turning || event.repeat) return;
-  const readingArea = publicationArea(event.target);
+  const readingArea = readingAreaFor(event.target);
   if (readingArea) {
-    if (event.key === 'Home' || event.key === 'End') readingArea.scrollTop = event.key === 'Home' ? 0 : readingArea.scrollHeight;
-    else if (direction < 0 && readingArea.scrollTop <= 1) goTo(current - 1, true);
-    else readingArea.scrollTop += direction * readingArea.clientHeight * .7;
+    const area = readingArea.element;
+    if (event.key === 'Home' || event.key === 'End') area.scrollTop = event.key === 'Home' ? 0 : area.scrollHeight;
+    else if (direction === readingArea.direction && atReadingEdge(readingArea)) goTo(current + direction, true);
+    else area.scrollTop += direction * area.clientHeight * .7;
     return;
   }
   goTo(event.key === 'Home' ? 0 : event.key === 'End' ? pages.length - 1 : current + direction);

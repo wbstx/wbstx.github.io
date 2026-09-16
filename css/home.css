@@ -41,17 +41,23 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   top: 10px;
   left: 10px;
 }
-.hero {
-  position: relative;
-  max-width: 1600px;
+/* A visible prism cycle precedes the page, independent of the retired badge. */
+.home-loader { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 220ms ease, visibility 0s linear 220ms; }
+.is-loading .home-loader { visibility: visible; opacity: 1; pointer-events: auto; transition: none; }
+#main { transition: opacity 220ms ease; }
+.is-loading #main { opacity: 0; visibility: hidden; }
+.is-loading .skip-link { visibility: hidden; }
+.home-loader-visual { position: relative; width: min(560px, 90vw, 74svh); aspect-ratio: 10 / 7; transform: translate(5%, -3%); }
+.home-loader-visual img, .home-loader-visual canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.home-loader-visual.has-canvas img { visibility: hidden; }
+/* The opening chapter combines identity, links, and biography. */
+.hero { --profile-inset: max(8vw, calc((100vw - 1200px) / 2)); overflow: hidden; }
+.profile-content {
   min-height: 100svh;
-  margin: auto;
-  display: grid;
-  grid-template-columns: minmax(230px, .7fr) minmax(0, 1.3fr);
-  grid-template-rows: 1fr;
-  column-gap: 3%;
-  padding: 0 6%;
-  overflow: hidden;
+  padding: clamp(24px, 4svh, 44px) var(--profile-inset) 32px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 6svh, 56px);
 }
 /* One viewport layer stays still as chapters and the paper list scroll. */
 body::before {
@@ -63,83 +69,41 @@ body::before {
   background: url("/images/home/field-lines.svg") center / cover;
   opacity: .10;
 }
+.field-background { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; opacity: .10; pointer-events: none; }
+body.has-line-wake::before { background: none; }
 .hero-copy {
   position: relative;
   z-index: 2;
-  align-self: center;
-  padding: 54px 0 0;
-  pointer-events: none;
+  display: grid;
+  justify-items: center;
+  flex-shrink: 0;
+  margin-top: auto;
+  text-align: center;
+  gap: 12px;
 }
-.hero-copy a { pointer-events: auto; }
-.hero h1 { margin: 0; font-weight: 400; }
-.hero-name { display: block; font-size: clamp(48px, 4.7vw, 72px); line-height: 1.35; letter-spacing: -.055em; }
-.hero-name-latin { display: block; margin-top: 10px; font-size: 24px; letter-spacing: -.035em; }
-.hero-role { margin: 28px 0 0; color: #bfcbd0; font-size: 14px; line-height: 1.9; }
-.hero-role > span { color: var(--muted); }
-.hero-role a { color: var(--ink); }
-.hero-note { margin: 28px 0; font-size: 13px; line-height: 1.9; color: #8fa1aa; }
-.hero-contact { display: inline-flex; align-items: center; gap: 18px; font-size: 12px; color: #b7c6ce; }
-.badge-column { position: relative; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.badge-stage { position: relative; height: clamp(560px, 100svh, 900px); isolation: isolate; }
-.badge-stage::before {
-  position: absolute;
-  content: "";
-  inset: 12% -8% 0;
-  background: radial-gradient(ellipse at 52% 55%, #40464966 0%, #30373930 31%, #15171800 67%);
-  z-index: -1;
-}
-.badge-canvas { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 220ms cubic-bezier(.23, 1, .32, 1); }
-.badge-stage.is-ready .badge-canvas { opacity: 1; }
-.badge-canvas canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  outline-offset: -6px;
-  touch-action: pan-y;
-  cursor: default;
-}
-.badge-canvas canvas.is-hovered { cursor: grab; touch-action: none; }
-.badge-canvas canvas.is-dragging { cursor: grabbing; touch-action: none; }
-.social-links { display: flex; align-items: center; gap: 12px; margin: 24px 0 0 -8px; }
+.profile-photo { display: block; width: clamp(72px, 9svh, 88px); height: auto; aspect-ratio: 1; margin: 0 auto 12px; object-fit: cover; border-radius: 50%; filter: brightness(.9) saturate(.8); }
+.hero h1 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 8px 16px; margin: 0; font-weight: 400; }
+.hero-name { display: block; font-size: clamp(42px, 3.6vw, 52px); line-height: 1.2; letter-spacing: -.055em; }
+.hero-name-latin { display: block; font-size: 25px; letter-spacing: -.035em; }
+.hero-role { margin: 10px 0 0; color: #bfcbd0; font-size: 13px; line-height: 1.8; }
+.hero-role br { display: none; }
+.hero-role > span { margin-left: 10px; color: var(--muted); }
+.profile-links { display: grid; justify-items: center; gap: 8px; }
+.profile-contact-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 24px; }
+.hero-contact { display: inline-flex; align-items: center; gap: 18px; font-size: 13px; color: #b7c6ce; }
+.social-links { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; }
 .social-links a { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; }
 .social-links img { display: block; width: 20px; height: 20px; object-fit: contain; filter: brightness(0) invert(1); opacity: .72; transition: opacity 160ms ease, transform 160ms ease; }
 @media (hover: hover) and (pointer: fine) {
   .social-links a:hover img { opacity: 1; transform: translateY(-2px); }
 }
-.badge-fallback {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  transition: opacity 180ms ease-out, visibility 0s;
-}
-.badge-stage.is-ready .badge-fallback {
-  opacity: 0;
-  visibility: hidden;
-  transition-delay: 0s, 180ms;
-}
-.badge-loader-visual {
-  position: relative;
-  width: min(560px, 74svh, 94vw);
-  max-width: 100%;
-  aspect-ratio: 10 / 7;
-}
-.badge-loader-visual img, .badge-loader-visual canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.badge-loader-visual.has-canvas img { visibility: hidden; }
 /* Full-screen chapters with an independent publication reading area. */
 .page { position: relative; min-height: 100svh; }
 .research {
+  --research-inset: max(8vw, calc((100vw - 1200px) / 2));
   color: var(--ink);
   border-top: 1px solid var(--line);
-  padding: 40px max(8%, calc((100% - 1200px) / 2));
+  padding: 40px var(--research-inset);
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -148,54 +112,27 @@ body::before {
 .tiny-label { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: #a0b4bf; }
 .page-content { flex: 1; min-height: 0; }
 .page:focus, .page-content:focus { outline: none; }
-.biography-page { --biography-inset: max(8vw, calc((100vw - 1200px) / 2)); overflow: clip; }
-.biography-content { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); align-items: center; gap: 7%; }
-.biography-content h2 {
-  position: absolute;
-  top: 35%;
-  left: 58%;
-  z-index: 1;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  color: #e8e9e4;
-  font-size: clamp(44px, min(6vw, 10svh), 88px);
-  font-weight: 400;
-  letter-spacing: -.06em;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-  text-shadow: 0 2px 24px #00000099;
+.biography-content {
+  flex: 0 0 auto;
+  width: min(100%, 680px);
+  margin: 0 auto auto;
 }
-.biography-visual {
-  position: relative;
-  isolation: isolate;
-  width: min(calc(100% + var(--biography-inset)), 112svh);
-  margin-left: calc(-1 * var(--biography-inset));
-  min-width: 0;
-  transform: translateY(clamp(28px, 6svh, 72px));
-}
-.biography-art {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  transform: translateY(clamp(-28px, -2.7svh, -12px));
-  overflow: hidden;
-  pointer-events: none;
-  user-select: none;
-}
-/* Native image transparency keeps the fixed linework visible around the artwork. */
-.biography-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.biography-copy { padding: 24px 0; font-size: 16px; }
-.biography-copy p { color: #a7b4bc; margin: 24px 0 0; }
+.biography-copy { width: 100%; padding: 0; font-size: 14px; line-height: 1.85; }
+.biography-copy p { color: #a7b4bc; margin: 0; }
+.biography-copy p + p { margin-top: 20px; }
 .biography-copy strong { color: #d9e0e3; font-weight: 500; }
 .biography-copy a { color: #c0d2dd; text-decoration: underline; text-decoration-color: #4b5d68; text-underline-offset: 4px; }
-.research em { color: #a8c5d6; font-style: normal; }
+.research em, .biography-copy em { color: #a8c5d6; font-style: normal; }
 
 
 .publication-list { padding: 0 18px 0 32px; border-left: 1px solid var(--line); }
 .publications-page { display: grid; grid-template-columns: minmax(230px, .75fr) minmax(0, 1.65fr); grid-template-rows: minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); padding-bottom: 40px; }
-.publication-summary { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: clamp(36px, 7svh, 80px); min-width: 0; }
-#publications-title { margin: 0; font-size: clamp(40px, 4.4vw, 64px); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; }
+.publication-summary { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: clamp(28px, 5svh, 48px); min-width: 0; }
+.publication-intro { position: relative; isolation: isolate; width: 100%; }
+#publications-title { position: absolute; top: 46%; left: 0; z-index: 1; width: 100%; transform: translateY(-50%); margin: 0; font-size: clamp(40px, 4.4vw, 64px); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-align: center; text-shadow: 0 2px 16px #0009; }
+/* Bleed the original artwork to the viewport edge beneath the centered title. */
+.publication-art { position: relative; width: calc(100% + var(--research-inset)); margin: 0 0 0 calc(-1 * var(--research-inset)); aspect-ratio: 4 / 3; pointer-events: none; user-select: none; }
+.publication-art img { display: block; width: 100%; height: auto; }
 
 .research-directions { display: grid; gap: 24px; padding: 0 0 0 15px; margin: 0; color: #a8bfcf; }
 .research-directions li { padding-left: 7px; }
@@ -217,70 +154,33 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
 .is-paged #main::-webkit-scrollbar { display: none; }
 .is-paged .page { height: 100dvh; min-height: 0; }
 .is-paged .publication-list { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #45545b transparent; }
-.is-paged .hero { grid-template-rows: minmax(0, 1fr); }
-.is-paged .badge-stage { height: 100%; min-height: 0; }
-
-
-
-
-
+.is-paged .profile-content { height: 100%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.is-paged .profile-content::-webkit-scrollbar { display: none; }
+.profile-content:focus { outline: none; }
 
 
 @media (hover: hover) and (pointer: fine) {
   .hero-copy a:hover, .research a:hover { color: #fff; }
 }
-@media (min-width: 901px) {
-  .hero { max-width: none; overflow: visible; isolation: isolate; }
-  .hero::after {
-    position: absolute;
-    content: "";
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(ellipse at 72% 55%, #40464966 0%, #30373930 25%, #15171800 55%);
-  }
-  .hero-copy { margin-inline-start: clamp(48px, 8vw, 128px); }
-  .badge-column { position: static; }
-  .badge-stage { position: absolute; inset: 0; height: 100%; z-index: 3; pointer-events: none; }
-  .badge-stage::before { display: none; }
-  .badge-fallback { left: 32.5%; }
-  .hero.is-badge-hovered, .hero.is-badge-hovered a { cursor: grab; }
-  .hero.is-badge-dragging, .hero.is-badge-dragging a { cursor: grabbing; }
-}
-@media (max-width: 1100px) and (min-width: 901px) {
-  .badge-fallback { left: 30.5%; }
-  .hero { grid-template-columns: minmax(210px, .65fr) minmax(0, 1.35fr); padding: 0 5%; column-gap: 2%; }
-  .hero-role { font-size: 13px; }
-  .hero-note { font-size: 12px; }
-}
 @media (max-width: 900px) {
-  .hero { display: flex; flex-direction: column; padding: 0 6%; }
-  .badge-column { order: 1; }
-  .badge-stage { height: clamp(460px, calc(100svh - 236px), 820px); margin: 0 -6.82%; }
-  /* The prism sits at 45% of its artwork; align it with the centered profile below. */
-  .badge-loader-visual { transform: translateX(5%); }
-  .hero-copy { order: 2; align-self: stretch; padding: 0 0 24px; text-align: center; }
-  .hero h1 { display: flex; align-items: baseline; justify-content: center; gap: 14px; }
-  .hero-name { font-size: 32px; }
-  .hero-name-latin { font-size: 20px; margin: 0; }
+  .hero { --profile-inset: 7vw; }
+  .profile-content { padding-top: 28px; padding-bottom: max(28px, env(safe-area-inset-bottom)); gap: 32px; }
+  .hero-copy { gap: 10px; }
+  .hero h1 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+  .hero-name { font-size: 42px; }
+  .hero-name-latin { font-size: 22px; margin: 0; }
   .hero-role { margin-top: 12px; font-size: 12px; line-height: 1.8; }
-  .hero-note { display: none; }
-  .hero-contact { margin-top: 12px; font-size: 11px; gap: 10px; }
-
-  .social-links { justify-content: center; gap: 14px; margin: 12px 0 0; }
-
-  .research { padding: 24px 7% 32px; gap: 24px; }
-  .biography-page { --biography-inset: 7vw; }
+  .hero-contact { font-size: 12px; gap: 10px; }
+  .social-links { gap: 8px; }
+  .biography-copy { font-size: 14px; line-height: 1.8; }
+  .biography-copy p + p { margin-top: 14px; }
+  .research { --research-inset: 7vw; padding: 24px var(--research-inset) 32px; gap: 24px; }
   .tiny-label { font-size: 9px; }
-  .biography-content { display: flex; flex-direction: column; justify-content: safe center; align-items: stretch; gap: 30px; }
-  .biography-content h2 { font-size: clamp(32px, 11vw, 58px); }
-  .biography-visual { width: min(92vw, 640px, 58svh); transform: none; }
-  .biography-copy { font-size: 14px; padding: 0; }
-  .biography-copy p { margin-top: 14px; }
   .publication-list { padding: 0 10px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   .publication { display: flex; flex-direction: column; gap: 22px; padding: 30px 0; }
   .publications-page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); padding-bottom: max(24px, env(safe-area-inset-bottom)); gap: 22px; }
   .publication-summary { gap: 18px; }
-  .publication-intro { display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 14px; }
+  .publication-art { width: min(calc(100% + var(--research-inset)), 320px, 36svh); }
   #publications-title { margin: 0; font-size: 28px; line-height: 1.2; }
   #publications-title br { display: none; }
   #publications-title br::after { content: " "; }
@@ -294,39 +194,23 @@ html.is-paged, .is-paged body { height: 100%; overflow: hidden; overscroll-behav
   .work-media img { max-height: 280px; }
   .work-copy { font-size: 12px; line-height: 1.75; padding: 0; width: 100%; }
   .work-title { font-size: clamp(18px, 4.8vw, 26px); line-height: 1.35; margin-bottom: 16px; }
-  .is-paged .hero { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-  .is-paged .badge-column { flex: 1; min-height: 0; }
-  .is-paged .hero-copy { flex-shrink: 0; }
-  .is-paged .hero-copy { padding-bottom: 16px; }
-
-
-
-
 }
-@media (max-width: 360px) {
-  .social-links { gap: 12px; }
-
+@media (max-width: 540px) {
+  .profile-contact-row { column-gap: 18px; }
+  .social-links { gap: 4px; }
+  .social-links a { width: 32px; height: 36px; }
+  .social-links img { width: 18px; height: 18px; }
 }
-@media (max-height: 650px) {
-  .research { gap: 18px; }
-  .is-paged .biography-content { justify-content: flex-start; }
-}
-@media (max-width: 900px) and (max-height: 650px) {
-  .biography-content { gap: 16px; }
-  .biography-content h2 { font-size: clamp(22px, 7vw, 36px); }
-  .biography-visual { width: min(82vw, 340px, 42svh); }
-  .biography-copy { font-size: 12px; line-height: 1.65; }
-  .biography-copy p { margin-top: 10px; }
-  .is-paged .hero-name { font-size: 26px; }
-  .is-paged .hero-name-latin { font-size: 18px; }
-  .is-paged .hero-role { font-size: 11px; margin-top: 6px; }
-  .is-paged .hero-contact { margin-top: 6px; }
-  .is-paged .hero-copy { padding-bottom: 10px; }
+@media (max-height: 650px) and (min-width: 901px) {
+  .profile-content { padding-top: 26px; gap: 22px; }
+  .hero-name { font-size: 44px; }
+  .hero-name-latin { font-size: 22px; }
+  .hero-role { margin-top: 8px; }
 }
 @media print {
   html.is-paged, .is-paged body, .is-paged #main { height: auto; overflow: visible; }
   .is-paged .page { height: auto; min-height: 100vh; break-after: page; }
-  .is-paged .page-content { overflow: visible; }
+  .is-paged .page-content, .is-paged .profile-content { height: auto; overflow: visible; }
 
 }
 @media (prefers-reduced-motion: reduce) {

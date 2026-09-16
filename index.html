@@ -13,58 +13,62 @@
   <meta name="theme-color" content="#151718">
   <link rel="icon" href="/images/ukiyo-e.png">
   <link rel="preload" href="/images/avatar-400.jpg" as="image">
+  <link rel="preload" href="/images/home/flower-noir-v4.png" as="image">
   <link rel="stylesheet" href="/css/home.css">
+  <script>
+    document.documentElement.classList.add('is-loading');
+    window.homeLoaderWatchdog = setTimeout(() => {
+      document.documentElement.classList.remove('is-loading');
+      document.querySelector('#main')?.removeAttribute('inert');
+    }, 10000);
+  </script>
   <title>Xiao Tang — Graphics & Interaction</title>
 </head>
 <body>
+  <div class="home-loader" id="home-loader" role="status" aria-label="Loading homepage" aria-busy="true">
+    <div class="home-loader-visual">
+      <img src="/images/home/halftone-prism.svg" width="600" height="420" alt="" aria-hidden="true">
+      <canvas id="home-loader-canvas" width="600" height="420" aria-hidden="true"></canvas>
+    </div>
+  </div>
   <a class="skip-link" href="#main">Skip to content</a>
   <main id="main">
     <section class="hero page" id="about" data-page-label="Profile" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <h1 id="hero-title"><span class="hero-name" lang="zh-CN">唐逍</span><span class="hero-name-latin">Xiao Tang</span></h1>
-        <p class="hero-role">Senior Graphics Engineer<br><span>Huawei</span></p>
-        <p class="hero-note">Computer graphics.<br>3D reconstruction.<br>Human–computer interaction.</p>
-        <a class="hero-contact" href="mailto:spect@foxmail.com">spect@foxmail.com <span aria-hidden="true">↗</span></a>
-        <div class="social-links">
-          <a href="https://github.com/wbstx" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><img src="/icons/Github.svg" width="20" height="20" alt="" aria-hidden="true"></a>
-          <a href="https://www.linkedin.com/in/xiao-tang-647043210" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn"><img src="/icons/Linkedin.svg" width="20" height="20" alt="" aria-hidden="true"></a>
-          <a href="https://scholar.google.com/citations?user=RlGzY0QAAAAJ&amp;hl=en" target="_blank" rel="noopener" aria-label="Google Scholar" title="Google Scholar"><img src="/icons/GoogleScholar.svg" width="20" height="20" alt="" aria-hidden="true"></a>
-          <a href="https://space.bilibili.com/29279843" target="_blank" rel="noopener" aria-label="Bilibili" title="Bilibili"><img src="/icons/Guitar.svg" width="20" height="20" alt="" aria-hidden="true"></a>
-        </div>
-      </div>
-      <div class="badge-column">
-        <div class="badge-stage" id="badge-stage" aria-busy="true">
-          <div id="badge-canvas" class="badge-canvas" aria-label="Xiao Tang’s interactive profile card"></div>
-          <div class="badge-fallback" id="badge-fallback" aria-hidden="true">
-            <div class="badge-loader-visual">
-              <img src="/images/home/halftone-prism.svg" width="600" height="420" alt="" decoding="async">
-              <canvas id="badge-loader" width="600" height="420"></canvas>
+      <div class="profile-content" data-page-overflow tabindex="-1">
+        <div class="hero-copy">
+          <div class="profile-identity">
+            <img class="profile-photo" src="/images/avatar-400.jpg" width="400" height="400" alt="Portrait of Xiao Tang" fetchpriority="high" decoding="async">
+            <h1 id="hero-title"><span class="hero-name" lang="zh-CN">唐逍</span><span class="hero-name-latin">Xiao Tang</span></h1>
+            <p class="hero-role">Senior Graphics Engineer<br><span>Huawei</span></p>
+          </div>
+          <div class="profile-links">
+            <div class="profile-contact-row">
+            <a class="hero-contact" href="mailto:spect@foxmail.com">spect@foxmail.com <span aria-hidden="true">↗</span></a>
+            <div class="social-links">
+              <a href="https://github.com/wbstx" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><img src="/icons/Github.svg" width="20" height="20" alt="" aria-hidden="true"></a>
+              <a href="https://www.linkedin.com/in/xiao-tang-647043210" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn"><img src="/icons/Linkedin.svg" width="20" height="20" alt="" aria-hidden="true"></a>
+              <a href="https://scholar.google.com/citations?user=RlGzY0QAAAAJ&amp;hl=en" target="_blank" rel="noopener" aria-label="Google Scholar" title="Google Scholar"><img src="/icons/GoogleScholar.svg" width="20" height="20" alt="" aria-hidden="true"></a>
+              <a href="https://space.bilibili.com/29279843" target="_blank" rel="noopener" aria-label="Bilibili" title="Bilibili"><img src="/icons/Guitar.svg" width="20" height="20" alt="" aria-hidden="true"></a>
+            </div>
             </div>
           </div>
         </div>
-        <span id="card-side" class="sr-only" role="status">Loading interactive profile card.</span>
+        <section class="biography-content" id="Biography" aria-label="Biography">
+          <div class="biography-copy"><p>I am currently a senior graphics engineer at Huawei, working on <a href="https://consumer.huawei.com/en/mobileservices/gopaint/" target="_blank" rel="noopener">GoPaint</a>. Before that, I received the Ph.D. degree from The Chinese University of Hong Kong (<strong>CUHK</strong>), supervised by <a href="https://www.cse.cuhk.edu.hk/~cwfu/" target="_blank" rel="noopener">Prof. Chi-Wing Fu</a>;
+    and the B.Eng. degree from the University of Science and Technology of China (<strong>USTC</strong>).
+    </p><p>
+    Now I am still super passionate about <strong>Computer Graphics</strong>.
+    <em>3D Reconstruction</em>, <em>Virtual Reality / Augmented Reality</em> and <em>Human-Computer Interaction</em> also fall within my research fields of interest.</p></div>
+        </section>
       </div>
-    </section>
-    <section class="research page biography-page" id="Biography" data-page-label="Biography" aria-labelledby="biography-title">
-      <div class="page-content biography-content" tabindex="-1">
-        <div class="biography-visual">
-          <h2 id="biography-title">Biography.</h2>
-          <div class="biography-art" aria-hidden="true">
-            <img src="/images/home/flower-noir-v4.png" width="1448" height="1086" alt="" loading="lazy" decoding="async" draggable="false">
-          </div>
-        </div>
-        <div class="biography-copy"><p>I am currently a senior graphics engineer at Huawei, working on <a href="https://consumer.huawei.com/en/mobileservices/gopaint/" target="_blank" rel="noopener">GoPaint</a>. Before that, I received the Ph.D. degree from The Chinese University of Hong Kong (<strong>CUHK</strong>), supervised by <a href="https://www.cse.cuhk.edu.hk/~cwfu/" target="_blank" rel="noopener">Prof. Chi-Wing Fu</a>;
-  and the B.Eng. degree from the University of Science and Technology of China (<strong>USTC</strong>).
-  <br>
-  Now I am still super passionate about <strong>Computer Graphics</strong>.
-  <em>3D Reconstruction</em>, <em>Virtual Reality / Augmented Reality</em> and <em>Human-Computer Interaction</em> also fall within my research fields of interest.</p></div>
-      </div>
-
     </section>
     <section class="research page publications-page" id="Publications" data-page-label="Publications" aria-labelledby="publications-title">
       <aside class="publication-summary" aria-label="Research directions">
         <div class="publication-intro">
           <h2 id="publications-title">Selected <br>Publication.</h2>
+          <div class="publication-art" aria-hidden="true">
+            <img src="/images/home/flower-noir-v4.png" width="1448" height="1086" alt="" decoding="async" draggable="false">
+          </div>
         </div>
         <ul class="research-directions">
           <li><strong>3D reconstruction</strong><span>Large scenes and Gaussian splatting.</span></li>
@@ -142,7 +146,8 @@
     </section>
   </main>
   <span class="sr-only" id="page-status" role="status" aria-live="polite"></span>
+  <script type="module" src="/js/home/generated/home-loader.js"></script>
   <script type="module" src="/js/home/generated/pages.js"></script>
-  <script type="module" src="/js/home/generated/badge-loader.js"></script>
+  <script type="module" src="/js/home/generated/field-lines.js"></script>
 </body>
 </html>
