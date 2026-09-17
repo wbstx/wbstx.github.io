@@ -82,7 +82,7 @@ async function harness({ reduced = false, canvasAvailable = true, preview = fals
 test('fast assets load immediately but the badge waits for one visible cycle', async () => {
   const loader = await harness();
   assert.equal(loader.imports, 1);
-  await loader.advance(3800);
+  await loader.advance(PRISM_CYCLE_DURATION * 1000 - 40);
   assert.equal(loader.ready, false);
   await loader.advance(120);
   assert.equal(loader.ready, true);
@@ -103,7 +103,7 @@ test('offscreen and background time do not count as played cycles', async () => 
   assert.equal(loader.draws, draws);
   assert.equal(loader.ready, false);
   loader.visible(true);
-  await loader.advance(1800);
+  await loader.advance(PRISM_CYCLE_DURATION * 1000 - 2040);
   assert.equal(loader.ready, false);
   await loader.advance(240);
   assert.equal(loader.ready, true);

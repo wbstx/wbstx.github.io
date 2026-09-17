@@ -19,7 +19,7 @@ const STEP_DURATION = .12;
 const ENTRY_STEPS = 6, INTERNAL_STEPS = 4, SPECTRUM_STEPS = 10;
 const TOTAL_STEPS = ENTRY_STEPS + INTERNAL_STEPS + SPECTRUM_STEPS;
 const HOLD_STEPS = 4;
-const CYCLE_STEPS = TOTAL_STEPS + HOLD_STEPS + Math.ceil(TOTAL_STEPS / 3) + 1;
+const CYCLE_STEPS = TOTAL_STEPS + HOLD_STEPS;
 export const PRISM_CYCLE_DURATION = CYCLE_STEPS * STEP_DURATION;
 export const PRISM_STILL_TIME = TOTAL_STEPS * STEP_DURATION;
 const SCALE = .76 / 6;
@@ -109,15 +109,13 @@ function beamVisible(point, planes) {
 
 function lightStep(seconds) {
   const step = ((Math.floor(seconds / STEP_DURATION + 1e-8) % CYCLE_STEPS) + CYCLE_STEPS) % CYCLE_STEPS;
-  // Entry, internal refraction and spectrum share one advancing head and tail.
-  return { head: Math.min(TOTAL_STEPS, step + 1), tail: Math.max(0, (step - TOTAL_STEPS - HOLD_STEPS + 1) * 3) };
+  // Build the complete beam, hold it, then start the next preview cycle.
+  return { head: Math.min(TOTAL_STEPS, step + 1) };
 }
 
 function segmentIntensity(position, light) {
   // The head still advances in discrete steps; only its spatial edge falls off.
-  const front = smoothstep(0, .38, light.head - position);
-  const tail = light.tail > 0 ? smoothstep(0, .38, position - light.tail) : 1;
-  return front * tail;
+  return smoothstep(0, .38, light.head - position);
 }
 
 function internalLight(point, paths, light) {

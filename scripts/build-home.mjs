@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { createPrismScene, prismPoster } from '../js/home/halftone.js';
 
 export const options = {
-  entryPoints: { badge: 'js/home/badge.js', pages: 'js/home/pages.js', 'badge-loader': 'js/home/badge-loader.js', 'home-loader': 'js/home/home-loader.js', 'field-lines': 'js/home/field-lines.js' },
+  entryPoints: { badge: 'js/home/badge.js', pages: 'js/home/pages.js', 'badge-loader': 'js/home/badge-loader.js', 'home-loader': 'js/home/home-loader.js', 'field-lines': 'js/home/field-lines.js', 'paper-previews': 'js/home/paper-previews.js' },
   loader: { '.svg': 'text' },
   outdir: 'js/home/generated',
   bundle: true,

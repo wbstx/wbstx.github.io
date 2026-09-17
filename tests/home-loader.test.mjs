@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
-import { PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from '../js/home/halftone.js';
+import { createPrismScene, prismPoster, PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from '../js/home/halftone.js';
 
 const source = (await readFile(new URL('../js/home/home-loader.js', import.meta.url), 'utf8'))
   .replace(/^import .*?;\n/, '');
@@ -79,15 +79,15 @@ async function harness({ slow = false, reduced = false, canvasAvailable = true, 
   };
 }
 
-test('the homepage waits for a complete visible prism cycle even with cached assets', async () => {
+test('the homepage reveals after about 1.8 seconds with the complete spectrum still visible', async () => {
   const app = await harness();
   assert.equal(app.main.inert, true);
   assert.equal(app.document.emit('wheel').prevented, true);
-  await app.advance(3800);
+  await app.advance(1720);
   assert.equal(app.loading, true);
   await app.advance(160);
   assert.equal(app.loading, false);
-  assert.ok(app.lastDraw >= PRISM_CYCLE_DURATION);
+  assert.equal(app.lastDraw, PRISM_STILL_TIME);
   assert.equal(app.main.inert, false);
   assert.equal(app.document.emit('wheel').stopped, false);
   assert.equal(app.pendingFrames, 0);
@@ -96,14 +96,14 @@ test('the homepage waits for a complete visible prism cycle even with cached ass
 
 test('time in a hidden tab does not satisfy minimum playback', async () => {
   const app = await harness();
-  await app.advance(2000);
+  await app.advance(900);
   app.hidden(true);
   const lastDraw = app.lastDraw;
   await app.advance(12000);
   assert.equal(app.lastDraw, lastDraw);
   assert.equal(app.loading, true);
   app.hidden(false);
-  await app.advance(1800);
+  await app.advance(800);
   assert.equal(app.loading, true);
   await app.advance(240);
   assert.equal(app.loading, false);
@@ -113,12 +113,20 @@ test('essential artwork must be ready, but a stalled asset cannot trap the homep
   const app = await harness({ slow: true });
   await app.advance(5000);
   assert.equal(app.loading, true);
+  assert.equal(app.lastDraw, PRISM_STILL_TIME);
   await app.finishAssets();
   assert.equal(app.loading, false);
   const stalled = await harness({ slow: true });
   await stalled.advance(8200);
   assert.equal(stalled.loading, false);
   assert.equal(stalled.main.inert, false);
+});
+
+test('the rendered light stays complete throughout the final hold instead of receding', () => {
+  const scene = createPrismScene();
+  const complete = prismPoster(scene, PRISM_STILL_TIME);
+  assert.notEqual(prismPoster(scene, 0), complete);
+  assert.equal(prismPoster(scene, PRISM_CYCLE_DURATION - .01), complete);
 });
 
 test('reduced motion and canvas failures leave the homepage accessible', async () => {

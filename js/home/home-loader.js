@@ -1,5 +1,8 @@
 import { createPrismScene, drawPrism, PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from './halftone.js';
 
+// Build and hold the complete light sequence in a 1.8-second visible cycle.
+const PLAYBACK_RATE = 1.6;
+
 function mountLoader() {
   const root = document.documentElement;
   const stage = document.querySelector('#home-loader');
@@ -44,7 +47,10 @@ function mountLoader() {
   }
 
   function draw() {
-    if (context) drawPrism(context, scene, motion.matches ? PRISM_STILL_TIME : elapsed);
+    // Keep the completed spectrum on screen until the page is ready to appear.
+    const time = motion.matches ? PRISM_STILL_TIME
+      : preview ? elapsed : Math.min(elapsed, PRISM_STILL_TIME);
+    if (context) drawPrism(context, scene, time);
   }
 
   function tick(now) {
@@ -54,7 +60,7 @@ function mountLoader() {
       if (last === null) last = now;
       if (now - last >= 1000 / 30) {
         // Count rendered foreground time, not time spent in a background tab.
-        elapsed += Math.min((now - last) / 1000, .1);
+        elapsed += Math.min((now - last) / 1000, .1) * PLAYBACK_RATE;
         last = now;
         draw();
         if (elapsed >= PRISM_CYCLE_DURATION) minimumPlayed = true;
