@@ -98,8 +98,7 @@ body.has-line-wake::before { background: none; }
 .hero-name { display: block; font-size: clamp(42px, 3.6vw, 52px); line-height: 1.2; letter-spacing: -.055em; }
 .hero-name-latin { display: block; font-size: 25px; letter-spacing: -.035em; }
 .hero-role { margin: 10px 0 0; color: #bfcbd0; font-size: 13px; line-height: 1.8; }
-.hero-role br { display: none; }
-.hero-role > span { margin-left: 10px; color: var(--muted); }
+.hero-role > span { color: var(--muted); }
 .profile-links { display: grid; justify-items: center; gap: 8px; }
 .profile-contact-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 24px; }
 .hero-contact { display: inline-flex; align-items: center; gap: 18px; font-size: 13px; color: #b7c6ce; }
