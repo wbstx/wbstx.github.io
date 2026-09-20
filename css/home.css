@@ -41,15 +41,15 @@ a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 2px solid
   top: 10px;
   left: 10px;
 }
-/* A visible prism cycle precedes the page, independent of the retired badge. */
-.home-loader { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 220ms ease, visibility 0s linear 220ms; }
-.is-loading .home-loader { visibility: visible; opacity: 1; pointer-events: auto; transition: none; }
-#main { transition: opacity 220ms ease; }
-.is-loading #main { opacity: 0; visibility: hidden; }
+/* The light unfolds into the fixed SVG field; the final frame needs no fade out. */
+.home-loader { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; visibility: hidden; pointer-events: none; }
+.is-loading .home-loader { visibility: visible; pointer-events: auto; }
+.is-loading #main { opacity: var(--entry-opacity, 0); visibility: hidden; }
+.is-loading.is-entering #main { visibility: visible; }
 .is-loading .skip-link { visibility: hidden; }
 .home-loader-visual { position: relative; width: min(560px, 90vw, 74svh); aspect-ratio: 10 / 7; transform: translate(5%, -3%); }
-.home-loader-visual img, .home-loader-visual canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.home-loader-visual.has-canvas img { visibility: hidden; }
+.home-loader-visual img, #home-loader-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.home-loader.has-canvas .home-loader-visual img { visibility: hidden; }
 /* The opening chapter combines identity, links, and biography. */
 .hero { --profile-inset: max(8vw, calc((100vw - 1200px) / 2)); overflow: hidden; }
 .profile-content {
@@ -69,8 +69,10 @@ body::before {
   background: url("/images/home/field-lines.svg") center / cover;
   opacity: .10;
 }
-.field-background { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; opacity: .10; pointer-events: none; }
-body.has-line-wake::before { background: none; }
+.field-background { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
+.field-background path { stroke-opacity: var(--field-opacity, .10); }
+.is-loading .field-background [data-prism-line] { stroke-opacity: 0; }
+body.has-field-background::before { background: none; }
 .hero-copy {
   position: relative;
   z-index: 2;

@@ -1,9 +1,10 @@
 import artwork from '../../images/home/field-lines.svg';
 import { createLineWake } from './line-wake.js';
+import { SPECTRUM } from './halftone.js';
 
 const pointer = matchMedia('(hover: hover) and (pointer: fine)');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
-let dispose = null;
+const lightInks = [[120, 133, 138], ...SPECTRUM];
 
 function mountBackground() {
   const parsed = new DOMParser().parseFromString(artwork, 'image/svg+xml');
@@ -19,6 +20,8 @@ function mountBackground() {
     element, original: element.getAttribute('d'), length: element.getTotalLength(),
     bounds: element.getBBox(), points: [], changed: false,
   }));
+  const lightPaths = paths.slice(19, 24);
+  lightPaths.forEach(path => path.element.setAttribute('data-prism-line', ''));
   const wake = createLineWake();
   let frame = 0, previousFrame = 0;
   let width = 0, height = 0, scale = 1, offsetX = 0, offsetY = 0;
@@ -87,7 +90,8 @@ function mountBackground() {
   }
 
   function move(event) {
-    if (event.pointerType !== 'mouse' || document.hidden) return;
+    if (event.pointerType !== 'mouse' || document.hidden || !pointer.matches || motion.matches
+      || document.documentElement.classList.contains('is-loading')) return;
     if (wake.move(event.clientX, event.clientY, performance.now() / 1000) && !frame) {
       frame = requestAnimationFrame(tick);
     }
@@ -96,7 +100,7 @@ function mountBackground() {
   function visibility() { if (document.hidden) reset(); }
 
   resize();
-  document.body.classList.add('has-line-wake');
+  document.body.classList.add('has-field-background');
   const observer = new ResizeObserver(resize);
   observer.observe(svg);
   // Observe mouse movement without owning input, including a captured badge drag.
@@ -104,22 +108,41 @@ function mountBackground() {
   document.addEventListener('pointerout', leave, { passive: true });
   document.addEventListener('visibilitychange', visibility);
   window.addEventListener('blur', reset);
-  return () => {
-    reset();
-    observer.disconnect();
-    document.removeEventListener('pointermove', move, true);
-    document.removeEventListener('pointerout', leave);
-    document.removeEventListener('visibilitychange', visibility);
-    window.removeEventListener('blur', reset);
-    document.body.classList.remove('has-line-wake');
-    svg.remove();
+  return {
+    reset,
+    light(progress, settled) {
+      svg.style.setProperty('--field-opacity', String(.025 + .075 * progress));
+      if (settled) {
+        lightPaths.forEach((path, i) => {
+          path.element.style.stroke = `rgb(${lightInks[i].join(',')})`;
+          path.element.style.strokeOpacity = String(i ? .22 : .1);
+        });
+        svg.style.removeProperty('--field-opacity');
+      }
+    },
+    targets() {
+      const rect = svg.getBoundingClientRect();
+      const cover = Math.max(rect.width / box.width, rect.height / box.height);
+      const x = rect.left + (rect.width - box.width * cover) / 2 - box.x * cover;
+      const y = rect.top + (rect.height - box.height * cover) / 2 - box.y * cover;
+      return lightPaths.map((path, i) => {
+        // Read the real background path so the last canvas frame lands exactly on it.
+        const values = path.original.match(/-?\d*\.?\d+/g).map(Number);
+        return { curve: Array.from({ length: 4 }, (_, n) => [values[n * 2] * cover + x, values[n * 2 + 1] * cover + y]),
+          width: cover, opacity: i ? .22 : .1, rgb: lightInks[i] };
+      });
+    },
   };
 }
 
+// Keep the same SVG on touch devices; only pointer deformation is conditional.
+const background = mountBackground();
 function sync() {
-  if (pointer.matches && !motion.matches) dispose ||= mountBackground();
-  else { dispose?.(); dispose = null; }
+  if (!pointer.matches || motion.matches) background.reset();
 }
 pointer.addEventListener('change', sync);
 motion.addEventListener('change', sync);
 sync();
+
+export const prismFieldTargets = () => background.targets();
+export const setPrismField = (progress, settled = false) => background.light(progress, settled);

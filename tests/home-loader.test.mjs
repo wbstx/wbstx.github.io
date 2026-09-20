@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { createPrismScene, prismPoster, PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from '../js/home/halftone.js';
+import { easeFlow, FLOW_DURATION, FLOW_START } from '../js/home/prism-flow.js';
 
 const source = (await readFile(new URL('../js/home/home-loader.js', import.meta.url), 'utf8'))
-  .replace(/^import .*?;\n/, '');
+  .replace(/^import .*?;\n/gm, '');
 
 async function harness({ slow = false, reduced = false, canvasAvailable = true, preview = false, late = false, drawFailure = false } = {}) {
-  let now = 0, nextId = 0, releaseAssets, lastDraw = null, disconnected = false;
+  let now = 0, nextId = 0, releaseAssets, lastDraw = null, disconnected = false, settled = false;
   const frames = new Map(), timers = new Map();
   const classes = new Set(late ? [] : ['is-loading']);
   function eventTarget(value = {}) {
@@ -29,23 +30,29 @@ async function harness({ slow = false, reduced = false, canvasAvailable = true, 
     });
   }
   const assets = slow ? new Promise(resolve => { releaseAssets = resolve; }) : Promise.resolve();
-  const main = { inert: false, querySelectorAll: () => [{ decode: () => assets }] };
-  const stage = { setAttribute() {} };
+  const styles = new Map();
+  const main = { inert: false, querySelectorAll: () => [{ decode: () => assets }],
+    style: { setProperty: (name, value) => styles.set(name, value), removeProperty: name => styles.delete(name) } };
+  const stage = { setAttribute() {}, dataset: {}, classList: { add() {} },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 1440, height: 900 }) };
+  const visual = { getBoundingClientRect: () => ({ left: 460, top: 250, width: 560, height: 392 }) };
   const canvas = { getContext: () => canvasAvailable ? { setTransform() {} } : null,
     parentElement: { classList: { add() {} } } };
   const document = eventTarget({
     hidden: false,
     fonts: { ready: Promise.resolve() },
-    documentElement: { classList: { contains: value => classes.has(value), remove: value => classes.delete(value) } },
-    querySelector: selector => ({ '#home-loader': stage, '#home-loader-canvas': canvas, '#main': main })[selector],
+    documentElement: { classList: { contains: value => classes.has(value), add: value => classes.add(value), remove: value => classes.delete(value) } },
+    querySelector: selector => ({ '#home-loader': stage, '#home-loader-canvas': canvas, '#main': main, '.home-loader-visual': visual })[selector],
   });
   const motion = eventTarget({ matches: reduced });
   runInNewContext(source, {
     document, window: { homeLoaderWatchdog: -1 }, matchMedia: () => motion,
     location: { hostname: 'localhost', search: preview ? '?preview=loader' : '' },
     devicePixelRatio: 1, URLSearchParams, PRISM_CYCLE_DURATION, PRISM_STILL_TIME,
+    easeFlow, FLOW_START, FLOW_DURATION, prismFieldTargets: () => [],
+    setPrismField: (progress, ready) => { if (ready) settled = true; },
     createPrismScene: () => ({ width: 600, height: 420 }),
-    drawPrism: (context, scene, elapsed) => { if (drawFailure) throw Error('No renderer'); lastDraw = elapsed; },
+    drawPrismFlow: (context, scene, viewport, elapsed) => { if (drawFailure) throw Error('No renderer'); lastDraw = elapsed; },
     requestAnimationFrame: callback => { frames.set(++nextId, callback); return nextId; },
     cancelAnimationFrame: id => frames.delete(id),
     setTimeout: (callback, delay) => { timers.set(++nextId, { callback, at: now + delay }); return nextId; },
@@ -61,6 +68,8 @@ async function harness({ slow = false, reduced = false, canvasAvailable = true, 
     get lastDraw() { return lastDraw; },
     get pendingFrames() { return frames.size; },
     get disconnected() { return disconnected; },
+    get settled() { return settled; },
+    get opacity() { return Number(styles.get('--entry-opacity') || 0); },
     async advance(milliseconds) {
       for (let left = milliseconds; left > 0; left -= 20) {
         now += Math.min(20, left);
@@ -79,14 +88,19 @@ async function harness({ slow = false, reduced = false, canvasAvailable = true, 
   };
 }
 
-test('the homepage reveals after about 1.8 seconds with the complete spectrum still visible', async () => {
+test('content enters during the light morph, then the settled background releases input', async () => {
   const app = await harness();
   assert.equal(app.main.inert, true);
   assert.equal(app.document.emit('wheel').prevented, true);
   await app.advance(1720);
   assert.equal(app.loading, true);
+  assert.ok(app.opacity > 0 && app.opacity < 1);
+  assert.equal(app.settled, false);
   await app.advance(160);
+  assert.equal(app.loading, true); // One full loading cycle, with the morph still in flight.
+  await app.advance(1000);
   assert.equal(app.loading, false);
+  assert.equal(app.settled, true);
   assert.equal(app.lastDraw, PRISM_STILL_TIME);
   assert.equal(app.main.inert, false);
   assert.equal(app.document.emit('wheel').stopped, false);
@@ -105,7 +119,7 @@ test('time in a hidden tab does not satisfy minimum playback', async () => {
   app.hidden(false);
   await app.advance(800);
   assert.equal(app.loading, true);
-  await app.advance(240);
+  await app.advance(1240);
   assert.equal(app.loading, false);
 });
 
@@ -115,9 +129,11 @@ test('essential artwork must be ready, but a stalled asset cannot trap the homep
   assert.equal(app.loading, true);
   assert.equal(app.lastDraw, PRISM_STILL_TIME);
   await app.finishAssets();
+  assert.equal(app.loading, true);
+  await app.advance(1700);
   assert.equal(app.loading, false);
   const stalled = await harness({ slow: true });
-  await stalled.advance(8200);
+  await stalled.advance(9800);
   assert.equal(stalled.loading, false);
   assert.equal(stalled.main.inert, false);
 });

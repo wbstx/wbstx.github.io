@@ -7,7 +7,7 @@ const smoothstep = (start, end, value) => {
   return t * t * (3 - 2 * t);
 };
 // Muted atomic-age print colors, ordered from warm to cool in the outgoing beam.
-const SPECTRUM = [
+export const SPECTRUM = [
   [210, 79, 63],   // Vermilion
   [237, 163, 57],  // Golden orange
   [240, 231, 196], // Paper cream
@@ -206,8 +206,7 @@ function spectrumDots(scene, planes, output, circle, light) {
   }
 }
 
-function paintPrism(scene, seconds, circle) {
-  const { planes, light } = scene;
+export function paintPrismBody(scene, seconds, circle) {
   const step = lightStep(seconds);
   for (const point of scene.dots) {
     const illumination = internalLight(point, scene.internalPaths, step);
@@ -219,6 +218,27 @@ function paintPrism(scene, seconds, circle) {
       : '#c9cec8';
     if (radius > .05) circle(point.x, point.y, radius, color);
   }
+}
+
+export function prismBeams(scene, seconds) {
+  const head = lightStep(seconds).head;
+  const { light } = scene;
+  if (!light) return [];
+  return [
+    { start: project(scene, light.start), end: project(scene, light.entry), rgb: WHITE_LIGHT, head: Math.min(1, head / ENTRY_STEPS) },
+    ...light.output.map(ray => ({
+      start: project(scene, ray.point),
+      end: project(scene, ray.point.map((v, i) => v + ray.direction[i] * 3.15)),
+      rgb: ray.rgb,
+      head: Math.max(0, Math.min(1, (head - ENTRY_STEPS - INTERNAL_STEPS) / SPECTRUM_STEPS)),
+    })),
+  ];
+}
+
+function paintPrism(scene, seconds, circle) {
+  const { planes, light } = scene;
+  const step = lightStep(seconds);
+  paintPrismBody(scene, seconds, circle);
   if (light) {
     beamDots(scene, planes, light.entry, light.start, '#edf0e9', circle, step);
     spectrumDots(scene, planes, light.output, circle, step);

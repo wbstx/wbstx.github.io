@@ -1,6 +1,7 @@
-import { createPrismScene, drawPrism, PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from './halftone.js';
+import { createPrismScene, PRISM_CYCLE_DURATION, PRISM_STILL_TIME } from './halftone.js';
+import { drawPrismFlow, easeFlow, FLOW_START, FLOW_DURATION } from './prism-flow.js';
+import { prismFieldTargets, setPrismField } from './field-lines.js';
 
-// Build and hold the complete light sequence in a 1.8-second visible cycle.
 const PLAYBACK_RATE = 1.6;
 
 function mountLoader() {
@@ -8,6 +9,7 @@ function mountLoader() {
   const stage = document.querySelector('#home-loader');
   const main = document.querySelector('#main');
   const canvas = document.querySelector('#home-loader-canvas');
+  const visual = document.querySelector('.home-loader-visual');
   // A late download must not cover a page already released by the watchdog.
   if (!root.classList.contains('is-loading') || !stage || !main) return;
 
@@ -15,8 +17,8 @@ function mountLoader() {
     && new URLSearchParams(location.search).get('preview') === 'loader';
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let frame = 0, last = null, elapsed = 0, finished = false;
-  let assetsReady = false, minimumPlayed = motion.matches;
-  let observer, assetTimer, context, scene;
+  let assetsReady = false, transitionStart = null, progress = 0;
+  let observer, assetTimer, context, scene, viewport, targets;
   const blockedEvents = ['wheel', 'touchstart', 'touchmove', 'touchend', 'keydown'];
 
   function blockInput(event) {
@@ -36,36 +38,43 @@ function mountLoader() {
     document.removeEventListener('visibilitychange', sync);
     motion.removeEventListener('change', changeMotion);
     for (const type of blockedEvents) document.removeEventListener(type, blockInput, true);
+    // These are the same curves, colors, and widths as the final canvas frame.
+    setPrismField(1, progress >= 1 || motion.matches);
+    main.style.removeProperty('--entry-opacity');
     main.inert = false;
     stage.setAttribute('aria-busy', 'false');
     stage.setAttribute('aria-hidden', 'true');
     root.classList.remove('is-loading');
+    root.classList.remove('is-entering');
   }
 
   function maybeReveal() {
-    if (!preview && minimumPlayed && assetsReady) reveal();
+    if (!preview && assetsReady && (!context || motion.matches
+      || (progress >= 1 && elapsed * PLAYBACK_RATE >= PRISM_CYCLE_DURATION))) reveal();
   }
 
   function draw() {
-    // Keep the completed spectrum on screen until the page is ready to appear.
-    const time = motion.matches ? PRISM_STILL_TIME
-      : preview ? elapsed : Math.min(elapsed, PRISM_STILL_TIME);
-    if (context) drawPrism(context, scene, time);
+    if (!preview && assetsReady && transitionStart === null && elapsed >= FLOW_START) transitionStart = elapsed;
+    progress = motion.matches ? 1 : transitionStart === null ? 0 : Math.min(1, (elapsed - transitionStart) / FLOW_DURATION);
+    const seconds = motion.matches ? PRISM_STILL_TIME
+      : preview ? elapsed * PLAYBACK_RATE : Math.min(elapsed * PLAYBACK_RATE, PRISM_STILL_TIME);
+    stage.dataset.progress = progress.toFixed(3);
+    if (progress > 0) root.classList.add('is-entering');
+    // Reveal content while light is still unfolding, without a second page entrance.
+    main.style.setProperty('--entry-opacity', String(easeFlow((progress - .12) / .65)));
+    setPrismField(easeFlow((progress + .05) / .9));
+    if (context) drawPrismFlow(context, scene, viewport, seconds, progress, targets);
   }
 
   function tick(now) {
     frame = 0;
     if (finished || document.hidden || motion.matches) return;
     try {
-      if (last === null) last = now;
-      if (now - last >= 1000 / 30) {
-        // Count rendered foreground time, not time spent in a background tab.
-        elapsed += Math.min((now - last) / 1000, .1) * PLAYBACK_RATE;
-        last = now;
-        draw();
-        if (elapsed >= PRISM_CYCLE_DURATION) minimumPlayed = true;
-        maybeReveal();
-      }
+      // Count visible animation time; returning to a tab cannot skip the transition.
+      if (last !== null) elapsed += Math.min((now - last) / 1000, .1);
+      last = now;
+      draw();
+      maybeReveal();
       if (!finished) frame = requestAnimationFrame(tick);
     } catch (error) {
       console.error('The homepage loading animation could not render:', error);
@@ -81,17 +90,20 @@ function mountLoader() {
   }
 
   function changeMotion() {
-    if (motion.matches) minimumPlayed = true;
     draw();
     maybeReveal();
     sync();
   }
 
   function resize() {
-    const resolution = Math.max(1, Math.min(3, devicePixelRatio || 1));
-    canvas.width = scene.width * resolution;
-    canvas.height = scene.height * resolution;
+    const bounds = stage.getBoundingClientRect(), art = visual.getBoundingClientRect();
+    const resolution = Math.max(1, Math.min(2, devicePixelRatio || 1));
+    viewport = { width: bounds.width, height: bounds.height, scale: art.width / scene.width,
+      origin: [art.left - bounds.left, art.top - bounds.top] };
+    canvas.width = Math.round(bounds.width * resolution);
+    canvas.height = Math.round(bounds.height * resolution);
     context.setTransform(resolution, 0, 0, resolution, 0, 0);
+    targets = prismFieldTargets();
     draw();
   }
 
@@ -102,15 +114,15 @@ function mountLoader() {
     if (context) {
       scene = createPrismScene();
       resize();
-      canvas.parentElement.classList.add('has-canvas');
+      stage.classList.add('has-canvas');
       observer = new ResizeObserver(resize);
-      observer.observe(canvas);
+      observer.observe(stage);
       document.addEventListener('visibilitychange', sync);
       motion.addEventListener('change', changeMotion);
       sync();
-    } else minimumPlayed = true;
+    }
 
-    // Decode only the profile artwork; lazy paper thumbnails must not hold up entry.
+    // Lazy paper thumbnails never delay entry. A stalled image gets a bounded wait.
     const images = [...main.querySelectorAll('img[fetchpriority="high"], .publication-art img')];
     const ready = () => {
       clearTimeout(assetTimer);
