@@ -23,6 +23,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
+import { BrushSpatialIndex } from "./brush-spatial-index.js?v=20260928-brush";
+import { BrushStrokeQueue } from "./brush-stroke-queue.js?v=20260928-brush";
 
 const ASSET_BASE =
   "https://raw.githubusercontent.com/wbstx/wbstx.github.io/spark-relight-assets";
@@ -605,11 +607,13 @@ let paintDragging = false;
 let paintPointerId = null;
 let lastPaintClientX = Number.NaN;
 let lastPaintClientY = Number.NaN;
-let pendingPaintSample;
+const paintStrokeQueue = new BrushStrokeQueue();
 let pendingHoverSample;
-let nextPaintSampleAt = 0;
 let nextHoverSampleAt = 0;
-const paintSampleInterval = coarsePointerMedia.matches ? 1000 / 30 : 1000 / 60;
+let brushSpatialIndex;
+let brushSpatialIndexToken = 0;
+let preparedBrushIndices;
+const paintWorkBudgetMs = coarsePointerMedia.matches ? 3 : 4;
 const paintHoverInterval = 1000 / 20;
 let currentPaintMode = RvisSurfacePaintMode.COLOR;
 let currentPaintColorMode = RvisSurfaceColorMode.TINT;
@@ -1258,6 +1262,16 @@ function getSourceSplat(index) {
   );
 }
 
+function yieldToBrowser() {
+  return new Promise((resolve) => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(resolve, { timeout: 40 });
+    } else {
+      window.setTimeout(resolve, 0);
+    }
+  });
+}
+
 function getShortestAxisNormal(scales, quaternion, target) {
   if (scales.z <= scales.x && scales.z <= scales.y) {
     target.set(0, 0, 1);
@@ -1597,7 +1611,7 @@ function setPaintEnabled(enabled) {
     const capturedPointerId = paintPointerId;
     paintDragging = false;
     paintPointerId = null;
-    pendingPaintSample = undefined;
+    paintStrokeQueue.clear();
     pendingHoverSample = undefined;
     if (
       capturedPointerId !== null &&
@@ -1648,10 +1662,27 @@ function setPaintTool(tool) {
 
 function prepareBrushStamp(event) {
   if (!surfacePainter || !splat) return false;
+  preparedBrushIndices = undefined;
   updatePointerRay(event);
-  const hit = pointerRaycaster.intersectObject(splat, false)[0];
+  if (brushSpatialIndex?.mesh !== splat) {
+    paintHelp.textContent = "Preparing surface index…";
+    return false;
+  }
+  const candidates = brushSpatialIndex.query(pointerRaycaster.ray);
+  const previousIndices = splat.sourceRaycastIndices;
+  let hit;
+  try {
+    splat.sourceRaycastIndices = {
+      numSplats: candidates.length,
+      indices: candidates,
+    };
+    // An empty conservative query is a real miss, never a request to scan N.
+    if (candidates.length)
+      hit = pointerRaycaster.intersectObject(splat, false)[0];
+  } finally {
+    splat.sourceRaycastIndices = previousIndices;
+  }
   if (!hit || !Number.isInteger(hit.splatIndex)) {
-    updateBrushCursor(event, false);
     paintHelp.textContent = "No paintable surface under the pointer.";
     return false;
   }
@@ -1674,7 +1705,17 @@ function prepareBrushStamp(event) {
     normal: brushNormal,
     cameraPosition: brushCameraPosition,
   });
-  updateBrushCursor(event, true);
+  if (surfacePainter.thicknessFilterEnabled) {
+    const candidates = brushSpatialIndex.querySphere(
+      brushHitLocal,
+      Math.hypot(surfacePainter.radius, surfacePainter.thickness),
+    );
+    // Point updates are batched. With thickness disabled the shader's brush
+    // is an unbounded cylinder, so a sphere query would incorrectly omit splats.
+    if (candidates.length < splat.numSplats * 0.6) {
+      preparedBrushIndices = candidates;
+    }
+  }
   const action =
     currentPaintTool === PaintInteractionTool.ERASER
       ? `erase ${getPaintTargetLabel()}`
@@ -1688,11 +1729,12 @@ function requestBrushStamp(event, force = false) {
     event.clientX - lastPaintClientX,
     event.clientY - lastPaintClientY,
   );
-  if (!force && pixelDistance < 3) return false;
+  // Finish short tails, but don't double-apply opacity on a stationary click.
+  if (!force && pixelDistance < (event.end ? 0.01 : 3)) return false;
   if (!prepareBrushStamp(event)) return false;
   lastPaintClientX = event.clientX;
   lastPaintClientY = event.clientY;
-  surfacePainter.requestStamp();
+  surfacePainter.requestStamp(preparedBrushIndices);
   return true;
 }
 
@@ -1706,41 +1748,59 @@ function pointerSample(event, force = false) {
 }
 
 function queuePaintSample(event, force = false) {
-  pendingPaintSample = pointerSample(event, force || pendingPaintSample?.force);
+  if (force) {
+    paintStrokeQueue.push(pointerSample(event, true));
+  } else {
+    for (const sample of event.getCoalescedEvents?.() ?? []) {
+      paintStrokeQueue.push(pointerSample(sample));
+    }
+    paintStrokeQueue.push(pointerSample(event));
+  }
+  // Cursor motion must not wait for raycasting or GPU updates.
+  updateBrushCursor(event, true);
   pendingHoverSample = undefined;
 }
 
 function queueHoverSample(event) {
   pendingHoverSample = pointerSample(event);
+  updateBrushCursor(event, true);
 }
 
-function adaptivePaintInterval(workMilliseconds, minimumInterval) {
-  return Math.max(minimumInterval, workMilliseconds * 2);
+function brushSampleSpacing() {
+  const distance = Math.max(0.001, camera.position.distanceTo(controls.target));
+  const pixelsPerUnit =
+    canvas.clientHeight /
+    (2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
+  const scale = splat.getWorldScale(brushAxis).length() / Math.sqrt(3);
+  return THREE.MathUtils.clamp(
+    surfacePainter.radius * scale * pixelsPerUnit * 0.3,
+    3,
+    40,
+  );
 }
 
 function processQueuedBrushWork(time) {
   if (!paintEnabled || !surfacePainter || !splat) return;
 
-  if (pendingPaintSample && time >= nextPaintSampleAt) {
-    const sample = pendingPaintSample;
-    pendingPaintSample = undefined;
+  if (paintStrokeQueue.length) {
+    // Leave queued points intact while the conservative index is being built.
+    if (brushSpatialIndex?.mesh !== splat) return;
     const startedAt = performance.now();
-    const stamped = requestBrushStamp(sample, sample.force);
-    if (stamped) surfacePainter.flush();
-    const workMilliseconds = performance.now() - startedAt;
-    nextPaintSampleAt =
-      time + adaptivePaintInterval(workMilliseconds, paintSampleInterval);
+    const spacing = brushSampleSpacing();
+    for (let stamps = 0; stamps < 4; stamps++) {
+      const sample = paintStrokeQueue.next(spacing);
+      if (!sample) break;
+      if (requestBrushStamp(sample, sample.force)) surfacePainter.flush();
+      if (performance.now() - startedAt >= paintWorkBudgetMs) break;
+    }
     return;
   }
 
   if (!paintDragging && pendingHoverSample && time >= nextHoverSampleAt) {
     const sample = pendingHoverSample;
     pendingHoverSample = undefined;
-    const startedAt = performance.now();
     prepareBrushStamp(sample);
-    const workMilliseconds = performance.now() - startedAt;
-    nextHoverSampleAt =
-      time + adaptivePaintInterval(workMilliseconds, paintHoverInterval);
+    nextHoverSampleAt = time + paintHoverInterval;
   }
 }
 
@@ -1748,10 +1808,15 @@ function finishPaintDrag(event) {
   if (!paintDragging || event.pointerId !== paintPointerId) return;
   event.preventDefault();
   event.stopImmediatePropagation();
+  if (event.type === "pointerup") {
+    paintStrokeQueue.push({ ...pointerSample(event), end: true });
+  } else if (event.type === "pointercancel") {
+    paintStrokeQueue.clear();
+  }
+  paintDragging = false;
   if (canvas.hasPointerCapture(event.pointerId)) {
     canvas.releasePointerCapture(event.pointerId);
   }
-  paintDragging = false;
   paintPointerId = null;
   controls.enabled = !paintEnabled;
   canvas.classList.remove("paint-dragging");
@@ -1829,7 +1894,6 @@ function bindSurfacePainting() {
       paintPointerId = event.pointerId;
       lastPaintClientX = Number.NaN;
       lastPaintClientY = Number.NaN;
-      nextPaintSampleAt = 0;
       controls.enabled = false;
       canvas.setPointerCapture(event.pointerId);
       canvas.classList.add("paint-dragging");
@@ -2410,6 +2474,25 @@ function createSurfacePainter() {
     mode: currentPaintMode,
     colorMode: currentPaintColorMode,
   });
+  if (brushSpatialIndex?.mesh !== splat) {
+    const token = ++brushSpatialIndexToken;
+    const indexedMesh = splat;
+    brushSpatialIndex = undefined;
+    void BrushSpatialIndex.build(
+      indexedMesh,
+      () =>
+        token === brushSpatialIndexToken &&
+        indexedMesh === surfacePainter?.mesh,
+    ).then((index) => {
+      if (
+        index &&
+        token === brushSpatialIndexToken &&
+        indexedMesh === surfacePainter?.mesh
+      ) {
+        brushSpatialIndex = index;
+      }
+    });
+  }
   updateSurfacePainterControls();
 }
 
@@ -2679,6 +2762,9 @@ function disposeScene() {
   }
   lightArrow.visible = false;
   lightingUpdatePending = false;
+  brushSpatialIndexToken += 1;
+  brushSpatialIndex = undefined;
+  if (splat) splat.sourceRaycastIndices = undefined;
   disposeGroundReceiver();
   disposeSurfacePainter();
   if (splat) {
