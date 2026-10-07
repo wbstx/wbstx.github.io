@@ -586,6 +586,7 @@ let surfacePainter;
 let activeScene;
 let activeVisibilityVariant;
 let sceneLoadToken = 0;
+let sceneAbort;
 let visibilityLoadToken = 0;
 let groundShadowLoadToken = 0;
 let selectedLocalSogFile;
@@ -2295,7 +2296,7 @@ function updateLocalImportControls() {
     "Choose .rvis",
   );
   loadLocalSceneButton.disabled =
-    sceneLoading || !selectedLocalSogFile || !selectedLocalRvisFile;
+    !selectedLocalSogFile || !selectedLocalRvisFile;
   if (localImportError) {
     localImportStatus.classList.add("error");
     localImportStatus.textContent = localImportError;
@@ -2303,7 +2304,7 @@ function updateLocalImportControls() {
   }
   localImportStatus.classList.remove("error");
   if (sceneLoading) {
-    localImportStatus.textContent = "A scene is currently loading…";
+    localImportStatus.textContent = "Opening cancels the current download.";
   } else if (selectedLocalSogFile && selectedLocalRvisFile) {
     localImportStatus.textContent =
       "Ready to open · files never leave this browser.";
@@ -2796,7 +2797,7 @@ function bindControls() {
     });
   });
   loadLocalSceneButton.addEventListener("click", () => {
-    if (!selectedLocalSogFile || !selectedLocalRvisFile || sceneLoading) return;
+    if (!selectedLocalSogFile || !selectedLocalRvisFile) return;
     loadScene(
       createLocalSceneConfig(selectedLocalSogFile, selectedLocalRvisFile),
     );
@@ -3024,6 +3025,49 @@ async function loadVisibilityVariant(requestedId) {
   }
 }
 
+const SCENE_FETCH_TIMEOUT_MS = 120_000;
+
+function sceneFetchSignal(signal) {
+  const timeoutSignal = AbortSignal.timeout(SCENE_FETCH_TIMEOUT_MS);
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([signal, timeoutSignal]);
+  }
+  const controller = new AbortController();
+  const forward = (source) => {
+    if (source.aborted) {
+      controller.abort(source.reason);
+      return;
+    }
+    source.addEventListener(
+      "abort",
+      () => controller.abort(source.reason),
+      { once: true },
+    );
+  };
+  forward(signal);
+  forward(timeoutSignal);
+  return controller.signal;
+}
+
+function rejectWhenAborted(signal) {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise((_, reject) => {
+    signal.addEventListener("abort", () => reject(signal.reason), {
+      once: true,
+    });
+  });
+}
+
+async function fetchRvis(url, signal) {
+  const response = await fetch(url, { signal });
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load RVIS: ${response.status} ${response.statusText}`,
+    );
+  }
+  return parseRvis(await response.arrayBuffer());
+}
+
 async function loadScene(
   sceneConfig,
   requestedVisibilityVariant,
@@ -3036,46 +3080,58 @@ async function loadScene(
   );
   const preservedCameraView = preserveCamera ? captureCameraView() : undefined;
   const loadToken = ++sceneLoadToken;
+  sceneAbort?.abort();
+  sceneAbort = new AbortController();
   sceneLoading = true;
-  localImportError = undefined;
-  updateLocalImportControls();
-  cameraKeys.clear();
-  controls.enabled = false;
-  updateSceneListState(sceneConfig.id, true);
-  assetStatus.classList.remove("ready", "error");
-  statusText.textContent = "Loading scene";
-  sceneSubtitle.textContent = `${localFiles ? sceneConfig.label : sceneConfig.id} · ${visibilityVariant.label}`;
-  splatCount.textContent = "— splats";
-  loadingSpinner.hidden = false;
-  loadingDetail.textContent = `Loading ${sceneConfig.label}…`;
-  loadingLayer.classList.remove("hidden");
-  disposeScene();
-  populateVisibilityVariants(sceneConfig, visibilityVariant.id);
-  updateVisibilityVariantState(sceneConfig, visibilityVariant.id, true);
-
-  const nextSplat = new SplatMesh({
-    ...(localFiles
-      ? {
-          fileName: localFiles.sog.name,
-          stream: localFiles.sog.stream(),
-          streamLength: localFiles.sog.size,
-        }
-      : {
-          url: assetUrl(resolveVariantGeometry(sceneConfig, visibilityVariant)),
-        }),
-    onProgress: (event) => {
-      if (loadToken !== sceneLoadToken || !event.lengthComputable) return;
-      loadingDetail.textContent = `Loading scene · ${Math.round((event.loaded / event.total) * 100)}%`;
-    },
-  });
+  let nextSplat;
   let nextLighting;
   let committed = false;
 
   try {
+    localImportError = undefined;
+    updateLocalImportControls();
+    cameraKeys.clear();
+    controls.enabled = false;
+    updateSceneListState(sceneConfig.id, true);
+    assetStatus.classList.remove("ready", "error");
+    statusText.textContent = "Loading scene";
+    sceneSubtitle.textContent = `${localFiles ? sceneConfig.label : sceneConfig.id} · ${visibilityVariant.label}`;
+    splatCount.textContent = "— splats";
+    loadingSpinner.hidden = false;
+    loadingDetail.textContent = `Loading ${sceneConfig.label}…`;
+    loadingLayer.classList.remove("hidden");
+    disposeScene();
+    populateVisibilityVariants(sceneConfig, visibilityVariant.id);
+    updateVisibilityVariantState(sceneConfig, visibilityVariant.id, true);
+
+    const fetchSignal = localFiles
+      ? undefined
+      : sceneFetchSignal(sceneAbort.signal);
+    nextSplat = new SplatMesh({
+      ...(localFiles
+        ? {
+            fileName: localFiles.sog.name,
+            stream: localFiles.sog.stream(),
+            streamLength: localFiles.sog.size,
+          }
+        : {
+            url: assetUrl(
+              resolveVariantGeometry(sceneConfig, visibilityVariant),
+            ),
+          }),
+      onProgress: (event) => {
+        if (loadToken !== sceneLoadToken || !event.lengthComputable) return;
+        loadingDetail.textContent = `Loading scene · ${Math.round((event.loaded / event.total) * 100)}%`;
+      },
+    });
+    nextSplat.initialized.catch(() => {});
     const rvisPromise = localFiles
       ? localFiles.rvis.arrayBuffer().then(parseRvis)
-      : loadRvis(assetUrl(visibilityVariant.rvis));
-    const [rvis] = await Promise.all([rvisPromise, nextSplat.initialized]);
+      : fetchRvis(assetUrl(visibilityVariant.rvis), fetchSignal);
+    const sogReady = fetchSignal
+      ? Promise.race([nextSplat.initialized, rejectWhenAborted(fetchSignal)])
+      : nextSplat.initialized;
+    const [rvis] = await Promise.all([rvisPromise, sogReady]);
     if (loadToken !== sceneLoadToken) {
       nextSplat.dispose();
       return;
@@ -3115,18 +3171,29 @@ async function loadScene(
     resetFpsCounter();
     updatePageUrl(sceneConfig, visibilityVariant);
   } catch (error) {
+    if (error?.name === "AbortError" || loadToken !== sceneLoadToken) {
+      if (!committed) {
+        nextLighting?.dispose();
+        nextSplat?.dispose();
+      }
+      return;
+    }
     console.error(error);
     disposeSurfacePainter();
     if (committed) {
       disposeScene();
     } else {
       nextLighting?.dispose();
-      nextSplat.dispose();
+      nextSplat?.dispose();
     }
     statusText.textContent = "Load failed";
     assetStatus.classList.add("error");
     loadingDetail.textContent =
-      error instanceof Error ? error.message : String(error);
+      error?.name === "TimeoutError"
+        ? "Scene download timed out."
+        : error instanceof Error
+          ? error.message
+          : String(error);
     if (localFiles) {
       localImportError = error instanceof Error ? error.message : String(error);
     }
