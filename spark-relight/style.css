@@ -189,7 +189,7 @@ body {
 
 .control-panel {
   position: absolute;
-  z-index: 5;
+  z-index: 12;
   top: 78px;
   right: 18px;
   width: min(310px, calc(100% - 36px));
